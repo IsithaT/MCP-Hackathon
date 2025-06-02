@@ -3,5 +3,5 @@
 ## Steps to Run
 
 ```python
-pip install -r requirements.tst
+pip install -r requirements.txt
 ```
