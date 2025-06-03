@@ -75,7 +75,7 @@ def api_call(
         return f"Error making API call: {str(e)}"
 
 
-app = gr.Interface(
+demo = gr.Interface(
     fn=api_call,
     inputs=[
         gr.Textbox(
@@ -127,8 +127,9 @@ app = gr.Interface(
             "GET",
         ],
     ],
-    allow_flagging="never",
+    flagging_mode="manual",
+    flagging_options=["Invalid Request", "API Error", "Other"],
 )
 
 if __name__ == "__main__":
-    app.launch(mcp_server=True)
+    demo.launch(mcp_server=True)
