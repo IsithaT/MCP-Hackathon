@@ -31,7 +31,7 @@ def api_call(
          sheets: Item
          fields: Name,Description
          language: en
-         limit: 1j
+         limit: 1
 
     2. GitHub API request with headers:
        method: "GET"
