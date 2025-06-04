@@ -3,16 +3,14 @@ import json
 
 
 class APIClient:
-    def __init__(self, base_url, auth_token=None):
+    def __init__(self, base_url):
         """
-        Initialize the API client with a base URL and optional auth token.
+        Initialize the API client with a base URL
 
         Parameters:
         - base_url: The base URL of the API
-        - auth_token: Optional authentication token
         """
         self.base_url = base_url.rstrip("/")
-        self.auth_token = auth_token
 
     def make_request(self, endpoint="", params=None, headers=None, method="GET"):
         """
@@ -32,10 +30,6 @@ class APIClient:
         # Initialize headers dictionary if None
         if headers is None:
             headers = {}
-
-        # Add authorization if token is provided
-        if self.auth_token:
-            headers["Authorization"] = f"Bearer {self.auth_token}"
 
         try:
             if method.upper() == "GET":

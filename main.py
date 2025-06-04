@@ -99,7 +99,6 @@ demo = gr.Interface(
             placeholder="Enter base URL",
             value="https://v2.xivapi.com/api",
         ),
-        gr.Textbox(label="Auth Token", placeholder="Enter auth token (optional)"),
         gr.Textbox(label="Endpoint", placeholder="Enter endpoint", value="search"),
         gr.Textbox(
             label="Parameter Key-Value Pairs",
@@ -125,7 +124,6 @@ demo = gr.Interface(
     title="Universal API Client",
     description="Make API calls to any endpoint with custom parameters. \n\n"
     + "- **Base URL**: Enter the full API base URL (e.g., 'https://api.example.com') \n"
-    + "- **Auth Token**: Provide if the API requires authentication \n"
     + "- **Endpoint**: The specific endpoint to call (without leading slash) \n"
     + "- **Parameter Key-Value Pairs**: Format as 'key: value' with each pair on a new line \n"
     + "  Example: \n```\nquery: search term\nlimit: 10\nfilter: active\n``` \n"
@@ -153,12 +151,12 @@ demo = gr.Interface(
             "GET",
         ],
         [
-            "https://api.anthropic.com/v1/messages",
+            "https://api.anthropic.com",
             "",
-            "",
-            "",
-            "x-api-key: YOUR_API_KEY\nanthropic-version: 2023-06-01\ncontent-type: application/json",
-            '{"model":"claude-opus-4-20250514","max_tokens":1024,"messages":[{"role":"user","content":"Hello, world"}]}',
+            "v1/messages",
+            "model: claude-opus-4-20250514\nmax_tokens: 1024",
+            "x-api-key: API-KEY-HERE\nanthropic-version: 2023-06-01\ncontent-type: application/json",
+            '{"messages": [{"role": "user", "content": "Hello there!"}]}',
             "POST",
             "https://api.anthropic.com",
             "v1/messages",
