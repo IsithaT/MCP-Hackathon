@@ -3,48 +3,62 @@ import json
 
 
 class APIClient:
-    def __init__(self, base_url="https://v2.xivapi.com/api", auth_token=None):
-        self.base_url = base_url if base_url else "https://v2.xivapi.com/api"
+    def __init__(self, base_url, auth_token=None):
+        """
+        Initialize the API client with a base URL and optional auth token.
+
+        Parameters:
+        - base_url: The base URL of the API
+        - auth_token: Optional authentication token
+        """
+        self.base_url = base_url.rstrip("/")
         self.auth_token = auth_token
 
-    def make_request(
-        self, endpoint=None, params=None, method="GET", data=None, json_data=None
-    ):
+    def make_request(self, endpoint="", params=None, headers=None, method="GET"):
         """
-        Make an API request with flexible parameters.
+        Make an HTTP request to the API endpoint.
+
+        Parameters:
+        - endpoint: API endpoint (without leading slash)
+        - params: Dictionary of parameters to include in the request
+        - headers: Dictionary of headers to include in the request
+        - method: HTTP method (GET, POST, PUT, DELETE)
+
+        Returns:
+        - String representation of the API response
         """
-        url = f"{self.base_url}/{endpoint}" if endpoint else self.base_url
+        url = f"{self.base_url}/{endpoint.lstrip('/')}" if endpoint else self.base_url
 
-        # Remove trailing slash if endpoint is empty
-        if endpoint == "":
-            url = self.base_url.rstrip("/")
+        # Initialize headers dictionary if None
+        if headers is None:
+            headers = {}
 
-        headers = {}
+        # Add authorization if token is provided
         if self.auth_token:
             headers["Authorization"] = f"Bearer {self.auth_token}"
 
-        kwargs = {"headers": headers}
-
-        if params:
-            kwargs["params"] = params
-        if data:
-            kwargs["data"] = data
-        if json_data:
-            kwargs["json"] = json_data
-
         try:
-            print(f"Making {method} request to {url}")
-            print(f"Parameters: {params}")
+            if method.upper() == "GET":
+                response = requests.get(url, params=params, headers=headers)
+            elif method.upper() == "POST":
+                response = requests.post(url, json=params, headers=headers)
+            elif method.upper() == "PUT":
+                response = requests.put(url, json=params, headers=headers)
+            elif method.upper() == "DELETE":
+                response = requests.delete(url, json=params, headers=headers)
+            else:
+                return f"Unsupported method: {method}"
 
-            response = requests.request(method, url, **kwargs)
+            # Check if the response is successful
+            response.raise_for_status()
 
-            # Try to parse response as JSON
-            if response.status_code == 200:
-                try:
-                    return response.json()
-                except json.JSONDecodeError:
-                    return response.text
+            # Try to parse JSON response
+            try:
+                result = response.json()
+                return json.dumps(result, indent=2)
+            except ValueError:
+                # Return raw text if not JSON
+                return response.text
 
-            return f"Error {response.status_code}: {response.text}"
         except requests.exceptions.RequestException as e:
-            return f"Request Error: {str(e)}"
+            return f"Request error: {str(e)}"

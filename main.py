@@ -8,6 +8,7 @@ def api_call(
     auth_token=None,
     endpoint=None,
     param_keys_values=None,
+    header_keys_values=None,
     additional_params=None,
     method="GET",
 ):
@@ -19,17 +20,19 @@ def api_call(
     - auth_token: Optional authentication token for APIs requiring authorization
     - endpoint: The specific API endpoint to call (e.g., "search", "users/profile")
     - param_keys_values: String containing parameter key-value pairs, one per line in format "key: value"
+    - header_keys_values: String containing header key-value pairs, one per line in format "key: value"
     - additional_params: Optional JSON string for complex parameters
     - method: HTTP method to use (GET, POST, PUT, DELETE)
 
     Instructions:
-    - Format param_keys_values as a multi-line string with each parameter on a new line
+    - Format param_keys_values and header_keys_values as a multi-line string with each pair on a new line
     - For numeric values, simply use numbers without quotes
     - For boolean values, use "true" or "false" (lowercase)
     - For string values, just provide the string without additional quotes
     """
     # Build params dictionary from key-value pairs
     params = {}
+    headers = {}
 
     # Process param_keys_values
     if param_keys_values:
@@ -51,6 +54,18 @@ def api_call(
                     else:
                         params[key] = value
 
+    # Process header_keys_values
+    if header_keys_values:
+        lines = header_keys_values.strip().split("\n")
+        for line in lines:
+            if ":" in line:
+                key, value = line.split(":", 1)
+                key = key.strip()
+                value = value.strip()
+
+                if key:  # Only add non-empty keys
+                    headers[key] = value
+
     # Handle additional parameters
     if additional_params and additional_params.strip():
         try:
@@ -68,6 +83,7 @@ def api_call(
         result = client.make_request(
             endpoint=endpoint,
             params=params,
+            headers=headers,
             method=method,
         )
         return result
@@ -92,6 +108,12 @@ demo = gr.Interface(
             lines=5,
         ),
         gr.Textbox(
+            label="Header Key-Value Pairs",
+            placeholder="Enter one header per line in format 'key: value'",
+            value="",
+            lines=3,
+        ),
+        gr.Textbox(
             label="Additional Parameters (JSON)",
             placeholder="Enter any additional parameters as JSON",
             value="{}",
@@ -107,6 +129,8 @@ demo = gr.Interface(
     + "- **Endpoint**: The specific endpoint to call (without leading slash) \n"
     + "- **Parameter Key-Value Pairs**: Format as 'key: value' with each pair on a new line \n"
     + "  Example: \n```\nquery: search term\nlimit: 10\nfilter: active\n``` \n"
+    + "- **Header Key-Value Pairs**: Format as 'key: value' with each pair on a new line \n"
+    + "  Example: \n```\nx-api-key: your_api_key\ncontent-type: application/json\n``` \n"
     + "- **Additional Parameters**: Use valid JSON format for nested or complex parameters \n"
     + "- **Method**: Choose the appropriate HTTP method for your request",
     examples=[
@@ -115,6 +139,7 @@ demo = gr.Interface(
             "",
             "search",
             'query: Name~"popoto"\nsheets: Item\nfields: Name,Description\nlanguage: en\nlimit: 1',
+            "",
             "{}",
             "GET",
         ],
@@ -123,8 +148,18 @@ demo = gr.Interface(
             "",
             "repos/microsoft/TypeScript/issues",
             "state: open\nper_page: 5",
+            "Accept: application/vnd.github.v3+json",
             "{}",
             "GET",
+        ],
+        [
+            "https://api.anthropic.com/v1/messages",
+            "",
+            "",
+            "",
+            "x-api-key: YOUR_API_KEY\nanthropic-version: 2023-06-01\ncontent-type: application/json",
+            '{"model":"claude-opus-4-20250514","max_tokens":1024,"messages":[{"role":"user","content":"Hello, world"}]}',
+            "POST",
         ],
     ],
     flagging_mode="manual",
