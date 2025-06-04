@@ -59,7 +59,7 @@ demo = gr.Interface(
             "v1/messages",
             "model: claude-opus-4-20250514\nmax_tokens: 1024",
             "x-api-key: your_api_key_here\nanthropic-version: 2023-06-01\ncontent-type: application/json",
-            '{"messages": [{"role": "user", "content": "what is a chicken"}]}',
+            '{"messages": [{"role": "user", "content": "Hello there!"}]}',
         ],
     ],
 )

@@ -53,7 +53,7 @@ def api_call(
        header_keys_values:
          x-api-key: your_api_key_here
          content-type: application/json
-       additional_params: {"messages": [{"role": "user", "content": "Hello"}]}
+       additional_params: {"messages": [{"role": "user", "content": "Hello there!"}]}
     """
     # Build params dictionary from key-value pairs
     params = {}
