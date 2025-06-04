@@ -1,3 +1,6 @@
+DROP TABLE IF EXISTS api_call_results;
+DROP TABLE IF EXISTS api_configurations;
+
 CREATE TABLE api_configurations (
     id SERIAL PRIMARY KEY,
     mcp_api_key VARCHAR(255) NOT NULL,
