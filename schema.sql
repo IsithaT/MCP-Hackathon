@@ -16,3 +16,12 @@ CREATE TABLE api_configurations (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     validated_at TIMESTAMP
 );
+
+CREATE TABLE api_call_results (
+    id SERIAL PRIMARY KEY,
+    config_id INTEGER REFERENCES api_configurations(id) ON DELETE CASCADE,
+    response_data JSONB,
+    is_successful BOOLEAN,
+    error_message TEXT,
+    called_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
