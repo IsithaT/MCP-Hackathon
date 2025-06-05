@@ -239,7 +239,7 @@ def validate_api_call(
             database="testdb",
             user="postgres",
             host="localhost",
-            password="12345",
+            password="js2336222",
             port=5432,
         )
 
