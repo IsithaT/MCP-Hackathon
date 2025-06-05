@@ -38,7 +38,7 @@ def parse_key_value_string(key_value_string):
     return result
 
 
-def api_call(
+def call_api(
     method="GET",
     base_url=None,
     endpoint=None,

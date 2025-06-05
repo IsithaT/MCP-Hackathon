@@ -1,9 +1,6 @@
-import apiCall
+import api_client
 import json
 from datetime import datetime, timedelta
-import json
-import hashlib
-import apiCall
 import hashlib
 import psycopg2
 import os
@@ -13,7 +10,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-def validate_api_call(
+def validate_api_configuration(
     mcp_api_key,
     name,
     description,
@@ -31,11 +28,10 @@ def validate_api_call(
     TOOL: Validate and store API configuration for monitoring.
 
     PURPOSE: Test an API endpoint and store the configuration if successful. This is STEP 1
-    of the monitoring setup process. If validation fails, retry with corrected parameters.
-    If successful, use the returned config_id in setup_scheduler() function.
+    of the monitoring setup process. If validation fails, retry with corrected parameters.    If successful, use the returned config_id in activate_monitoring() function.
 
     ⚠️ CRITICAL: Even if success=True, you MUST manually check the 'sample_response' field
-    before proceeding to setup_scheduler(). The API call may return success=True but contain
+    before proceeding to activate_monitoring(). The API call may return success=True but contain
     error messages (like "401 Unauthorized", "Invalid API key", etc.) in the sample_response.
 
     WORKFLOW:
@@ -43,7 +39,7 @@ def validate_api_call(
     2. If success=False: Fix parameters and retry this function
     3. If success=True: MANUALLY INSPECT the 'sample_response' field for errors
     4. If sample_response contains error messages: Fix API parameters and retry validation
-    5. If sample_response looks valid: Use config_id in setup_scheduler() to activate monitoring
+    5. If sample_response looks valid: Use config_id in activate_monitoring() to activate monitoring
 
     Parameters:
     - mcp_api_key: MCP API key serves as user identifier
@@ -89,20 +85,6 @@ def validate_api_call(
         stop_after_hours: 48
         time_to_start: "2024-06-15 09:00:00"
 
-    3. GitHub API monitoring:
-        mcp_api_key: "your_mcp_key_here"
-        name: "Repo Issues Monitor"
-        description: "Monitor new issues in repository"
-        method: "GET"
-        base_url: "https://api.github.com"
-        endpoint: "repos/microsoft/TypeScript/issues"
-        param_keys_values: "state: open\nper_page: 10"
-        header_keys_values: "Accept: application/vnd.github.v3+json\nUser-Agent: MyApp"
-        additional_params: "{}"
-        schedule_interval_minutes: 60
-        stop_after_hours: 168
-        time_to_start: ""
-
     Returns:
     - Dictionary with success status, config_id (needed for setup_scheduler), message, and sample_response
 
@@ -116,7 +98,7 @@ def validate_api_call(
         "start_at": "2025-06-04T12:00:00Z"
     }
 
-    NEXT STEP: If success=True, call setup_scheduler(config_id, mcp_api_key) to activate monitoring
+    NEXT STEP: If success=True, call activate_monitoring(config_id, mcp_api_key) to activate monitoring
     """
     try:
         # Validate input parameters
@@ -189,10 +171,8 @@ def validate_api_call(
                     "config_id": None,
                 }
         else:
-            parsed_start_time = datetime.now()
-
-        # Test the API call
-        result = apiCall.api_call(
+            parsed_start_time = datetime.now()  # Test the API call
+        result = api_client.call_api(
             method=method,
             base_url=base_url,
             endpoint=endpoint,
@@ -288,8 +268,8 @@ def validate_api_call(
                 method,
                 base_url,
                 endpoint,
-                json.dumps(apiCall.parse_key_value_string(param_keys_values)),
-                json.dumps(apiCall.parse_key_value_string(header_keys_values)),
+                json.dumps(api_client.parse_key_value_string(param_keys_values)),
+                json.dumps(api_client.parse_key_value_string(header_keys_values)),
                 additional_params,
                 False,
                 False,
@@ -314,7 +294,7 @@ def validate_api_call(
         return {
             "success": True,
             "config_id": config_id,
-            "message": f"API call tested and stored successfully for '{name}'. Use this config_id in setup_scheduler() to activate monitoring.",
+            "message": f"API call tested and stored successfully for '{name}'. Use this config_id in activate_monitoring() to activate monitoring.",
             "sample_response": (
                 json.loads(result)
                 if result.startswith("{") or result.startswith("[")
@@ -333,17 +313,15 @@ def validate_api_call(
         }
 
 
-def setup_scheduler(config_id, mcp_api_key):
+def activate_monitoring(config_id, mcp_api_key):
     """
     TOOL: Activate periodic monitoring for a validated API configuration.
 
     PURPOSE: Start automated recurring API calls based on a previously validated configuration.
-    This is STEP 2 of the monitoring setup process.
-
-    PREREQUISITE: Must call validate_api_call() first and obtain a config_id from successful validation.
+    This is STEP 2 of the monitoring setup process.    PREREQUISITE: Must call validate_api_configuration() first and obtain a config_id from successful validation.
 
     WORKFLOW:
-    1. First call validate_api_call() to get config_id
+    1. First call validate_api_configuration() to get config_id
     2. If validation successful, call this function with the config_id
     3. Monitoring will run automatically according to the validated schedule
 
@@ -361,11 +339,7 @@ def setup_scheduler(config_id, mcp_api_key):
         config_id: 987654321
         mcp_api_key: "your_mcp_key_here"
 
-    3. Activate scheduler for GitHub issues:
-        config_id: 456789123
-        mcp_api_key: "your_mcp_key_here"
-
-    NOTE: The config_id must be obtained from a successful validate_api_call() response.
+    NOTE: The config_id must be obtained from a successful validate_api_configuration() response.
     The mcp_api_key must match the one used during validation.
 
     Returns:
@@ -394,7 +368,7 @@ def setup_scheduler(config_id, mcp_api_key):
 ## testing
 if __name__ == "__main__":
     # Example usage
-    response = validate_api_call(
+    response = validate_api_configuration(
         mcp_api_key="your_api_key",
         name="Dog Facts API",
         description="Monitor random dog facts from a free API",
