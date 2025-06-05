@@ -1,67 +1,92 @@
 import gradio as gr
 from apiCall import api_call
+from api_validator import validate_api_call, setup_scheduler
 
 
-demo = gr.Interface(
-    fn=api_call,
+def format_validation_result(result):
+    """Format validation result for display"""
+    if result["success"]:
+        return f"✅ Success!\n\nConfig ID: {result['config_id']}\nMessage: {result['message']}\n\nSample Response:\n{result.get('sample_response', 'No sample response')}"
+    else:
+        return f"❌ Failed!\n\nMessage: {result['message']}"
+
+
+def format_scheduler_result(result):
+    """Format scheduler result for display"""
+    if result["success"]:
+        return f"✅ Scheduler Active!\n\nConfig ID: {result['config_id']}\nMessage: {result['message']}\n\nSchedule Details:\n{result.get('schedule_interval_minutes', 'N/A')} minutes interval\nStops at: {result.get('stop_at', 'N/A')}"
+    else:
+        return f"❌ Scheduler Failed!\n\nMessage: {result['message']}"
+
+
+# API Validation Tab
+validation_tab = gr.Interface(
+    fn=lambda *args: format_validation_result(validate_api_call(*args)),
     inputs=[
-        gr.Radio(choices=["GET", "POST", "PUT", "DELETE"], label="Method", value="GET"),
         gr.Textbox(
-            label="Base URL",
-            placeholder="Enter base URL",
-            value="https://v2.xivapi.com/api",
+            label="MCP API Key", placeholder="Enter your MCP API key", type="password"
         ),
-        gr.Textbox(label="Endpoint", placeholder="Enter endpoint", value="search"),
+        gr.Textbox(
+            label="Monitoring Name", placeholder="e.g., 'NVDA Stock Price'", value=""
+        ),
+        gr.Textbox(
+            label="Description",
+            placeholder="What are you monitoring?",
+            value="",
+            lines=2,
+        ),
+        gr.Radio(choices=["GET", "POST", "PUT", "DELETE"], label="Method", value="GET"),
+        gr.Textbox(label="Base URL", placeholder="https://api.example.com", value=""),
+        gr.Textbox(label="Endpoint", placeholder="endpoint/path", value=""),
         gr.Textbox(
             label="Parameter Key-Value Pairs",
             placeholder="Enter one parameter per line in format 'key: value'",
-            value='query: Name~"popoto"\nsheets: Item\nfields: Name,Description\nlanguage: en\nlimit: 1',
-            lines=5,
+            value="",
         ),
         gr.Textbox(
             label="Header Key-Value Pairs",
             placeholder="Enter one header per line in format 'key: value'",
             value="",
-            lines=3,
         ),
         gr.Textbox(
             label="Additional Parameters (JSON)",
             placeholder="Enter any additional parameters as JSON",
             value="{}",
-            lines=3,
+        ),
+        gr.Number(
+            label="Schedule Interval (minutes)", value=20, minimum=1, maximum=1440
+        ),
+        gr.Number(label="Stop After (hours)", value=24, minimum=1, maximum=168),
+        gr.Textbox(
+            label="Start Time (optional)",
+            placeholder="YYYY-MM-DD HH:MM:SS or leave empty for immediate start",
+            value="",
         ),
     ],
-    outputs=gr.Textbox(label="API Response", lines=10),
-    title="Universal API Client",
-    description="Make API calls to any endpoint with custom parameters and headers. \n\n- **Method**: Choose the appropriate HTTP method for your request \n- **Base URL**: Enter the full API base URL (e.g., 'https://api.example.com') \n- **Endpoint**: The specific endpoint to call (without leading slash) \n- **Parameter Key-Value Pairs**: Format as 'key: value' with each pair on a new line \n  Example: \n```\nquery: search term\nlimit: 10\nfilter: active\n``` \n- **Header Key-Value Pairs**: Format as 'key: value' with each pair on a new line \n  Example: \n```\nx-api-key: your_api_key\ncontent-type: application/json\n``` \n- **Additional Parameters**: Use valid JSON format for nested or complex parameters",
-    flagging_mode="manual",
-    flagging_options=["Invalid Request", "API Error", "Other"],
-    examples=[
-        [
-            "GET",
-            "https://v2.xivapi.com/api",
-            "search",
-            'query: Name~"popoto"\nsheets: Item\nfields: Name,Description\nlanguage: en\nlimit: 1',
-            "",
-            "{}",
-        ],
-        [
-            "GET",
-            "https://api.github.com",
-            "repos/microsoft/TypeScript/issues",
-            "state: open\nper_page: 5",
-            "Accept: application/vnd.github.v3+json",
-            "{}",
-        ],
-        [
-            "POST",
-            "https://api.anthropic.com",
-            "v1/messages",
-            "model: claude-opus-4-20250514\nmax_tokens: 1024",
-            "x-api-key: your_api_key_here\nanthropic-version: 2023-06-01\ncontent-type: application/json",
-            '{"messages": [{"role": "user", "content": "Hello there!"}]}',
-        ],
+    outputs=gr.Textbox(label="Validation Result", lines=10),
+    title="API Validation & Storage",
+    description="Validate your API configuration and store it for scheduled monitoring. Max monitoring period is 1 week (168 hours).",
+)
+
+# Scheduler Setup Tab
+scheduler_tab = gr.Interface(
+    fn=lambda *args: format_scheduler_result(setup_scheduler(*args)),
+    inputs=[
+        gr.Number(label="Config ID (from validation step)", value=None),
+        gr.Textbox(
+            label="MCP API Key", placeholder="Enter your MCP API key", type="password"
+        ),
     ],
+    outputs=gr.Textbox(label="Scheduler Result", lines=8),
+    title="Scheduler Setup",
+    description="Activate scheduled monitoring for a validated API configuration.",
+)
+
+# Create tabbed interface
+demo = gr.TabbedInterface(
+    [validation_tab, scheduler_tab],
+    ["Validate & Store", "Activate Scheduler"],
+    title="MCP API Monitoring System",
 )
 
 if __name__ == "__main__":

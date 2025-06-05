@@ -23,37 +23,37 @@ def api_call(
     Examples:
 
     1. Simple GET request to a search API:
-       method: "GET"
-       base_url: "https://v2.xivapi.com/api"
-       endpoint: "search"
-       param_keys_values:
-         query: Name~"popoto"
-         sheets: Item
-         fields: Name,Description
-         language: en
-         limit: 1
+        method: "GET"
+        base_url: "https://v2.xivapi.com/api"
+        endpoint: "search"
+        param_keys_values:
+            query: Name~"popoto"
+            sheets: Item
+            fields: Name,Description
+            language: en
+            limit: 1
 
     2. GitHub API request with headers:
-       method: "GET"
-       base_url: "https://api.github.com"
-       endpoint: "repos/microsoft/TypeScript/issues"
-       param_keys_values:
-         state: open
-         per_page: 5
-       header_keys_values:
-         Accept: application/vnd.github.v3+json
+        method: "GET"
+        base_url: "https://api.github.com"
+        endpoint: "repos/microsoft/TypeScript/issues"
+        param_keys_values:
+            state: open
+            per_page: 5
+        header_keys_values:
+            Accept: application/vnd.github.v3+json
 
     3. POST request with JSON body. the "messages" parameter is complexly structured, so it requires special handling."
-       method: "POST"
-       base_url: "https://api.anthropic.com"
-       endpoint: "v1/messages"
-       param_keys_values:
-         model: claude-opus-4-20250514
-         max_tokens: 1024
-       header_keys_values:
-         x-api-key: your_api_key_here
-         content-type: application/json
-       additional_params: {"messages": [{"role": "user", "content": "Hello there!"}]}
+        method: "POST"
+        base_url: "https://api.anthropic.com"
+        endpoint: "v1/messages"
+        param_keys_values:
+            model: claude-opus-4-20250514
+            max_tokens: 1024
+        header_keys_values:
+            x-api-key: your_api_key_here
+            content-type: application/json
+        additional_params: {"messages": [{"role": "user", "content": "Hello there!"}]}
     """
     # Build params dictionary from key-value pairs
     params = {}
@@ -110,7 +110,7 @@ def api_call(
             params=params,
             headers=headers,
             method=method,
-        )
+        )        
         return result
     except Exception as e:
         return f"Error making API call: {str(e)}"
