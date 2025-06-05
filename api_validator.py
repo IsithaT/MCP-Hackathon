@@ -34,10 +34,16 @@ def validate_api_call(
     of the monitoring setup process. If validation fails, retry with corrected parameters.
     If successful, use the returned config_id in setup_scheduler() function.
 
+    ⚠️ CRITICAL: Even if success=True, you MUST manually check the 'sample_response' field
+    before proceeding to setup_scheduler(). The API call may return success=True but contain
+    error messages (like "401 Unauthorized", "Invalid API key", etc.) in the sample_response.
+
     WORKFLOW:
     1. Call this function to validate API configuration
     2. If success=False: Fix parameters and retry this function
-    3. If success=True: Use config_id in setup_scheduler() to activate monitoring
+    3. If success=True: MANUALLY INSPECT the 'sample_response' field for errors
+    4. If sample_response contains error messages: Fix API parameters and retry validation
+    5. If sample_response looks valid: Use config_id in setup_scheduler() to activate monitoring
 
     Parameters:
     - mcp_api_key: MCP API key serves as user identifier
