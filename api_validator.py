@@ -1,6 +1,9 @@
 import apiCall
 import json
 from datetime import datetime, timedelta
+import json
+import hashlib
+import apiCall
 import hashlib
 import psycopg2
 

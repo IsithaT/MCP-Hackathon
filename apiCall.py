@@ -2,6 +2,42 @@ import requests
 import json
 import psycopg2
 
+
+def parse_key_value_string(key_value_string):
+    """Parse a key-value string into a dictionary.
+
+    Parameters:
+    - key_value_string: String with key-value pairs, one per line, separated by ':'
+
+    Returns:
+    - Dictionary of parsed key-value pairs
+    """
+    result = {}
+
+    if not key_value_string:
+        return result
+
+    lines = key_value_string.strip().split("\n")
+    for line in lines:
+        if ":" in line:
+            key, value = line.split(":", 1)
+            key = key.strip()
+            value = value.strip()
+
+            if key:  # Only add non-empty keys
+                # Try to parse numeric values
+                if value.isdigit():
+                    result[key] = int(value)
+                elif value.lower() == "true":
+                    result[key] = True
+                elif value.lower() == "false":
+                    result[key] = False
+                else:
+                    result[key] = value
+
+    return result
+
+
 def api_call(
     method="GET",
     base_url=None,
@@ -54,42 +90,9 @@ def api_call(
             x-api-key: your_api_key_here
             content-type: application/json
         additional_params: {"messages": [{"role": "user", "content": "Hello there!"}]}
-    """
-    # Build params dictionary from key-value pairs
-    params = {}
-    headers = {}
-
-    # Process param_keys_values
-    if param_keys_values:
-        lines = param_keys_values.strip().split("\n")
-        for line in lines:
-            if ":" in line:
-                key, value = line.split(":", 1)
-                key = key.strip()
-                value = value.strip()
-
-                if key:  # Only add non-empty keys
-                    # Try to parse numeric values
-                    if value.isdigit():
-                        params[key] = int(value)
-                    elif value.lower() == "true":
-                        params[key] = True
-                    elif value.lower() == "false":
-                        params[key] = False
-                    else:
-                        params[key] = value
-
-    # Process header_keys_values
-    if header_keys_values:
-        lines = header_keys_values.strip().split("\n")
-        for line in lines:
-            if ":" in line:
-                key, value = line.split(":", 1)
-                key = key.strip()
-                value = value.strip()
-
-                if key:  # Only add non-empty keys
-                    headers[key] = value
+    """  # Build params and headers dictionaries from key-value pairs
+    params = parse_key_value_string(param_keys_values)
+    headers = parse_key_value_string(header_keys_values)
 
     # Handle additional parameters
     if additional_params and additional_params.strip():
@@ -110,9 +113,9 @@ def api_call(
             params=params,
             headers=headers,
             method=method,
-        )        
+        )
         return result
-    
+
     except Exception as e:
         return f"Error making API call: {str(e)}"
 
