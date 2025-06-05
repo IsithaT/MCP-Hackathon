@@ -6,6 +6,11 @@ import hashlib
 import apiCall
 import hashlib
 import psycopg2
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 
 def validate_api_call(
@@ -238,11 +243,19 @@ def validate_api_call(
         # Store configuration
         # TODO: Implement database
 
+        db_password = os.getenv("DB_PASSWORD")
+        if not db_password:
+            return {
+                "success": False,
+                "message": "Database password not found in environment variables. Please set DB_PASSWORD.",
+                "config_id": None,
+            }
+
         conn = psycopg2.connect(
             database="testdb",
             user="postgres",
             host="localhost",
-            password="js2336222",
+            password=db_password,
             port=5432,
         )
 
@@ -275,7 +288,7 @@ def validate_api_call(
                 False,
                 False,
                 schedule_interval_minutes,
-                start_time,
+                start_datetime,
                 created_at,
                 None,
             ),
