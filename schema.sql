@@ -16,6 +16,7 @@ CREATE TABLE api_configurations (
     is_active BOOLEAN DEFAULT FALSE,
     stop BOOLEAN DEFAULT FALSE,
     schedule_interval_minutes INTEGER,
+	time_to_start TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     validated_at TIMESTAMP
 );

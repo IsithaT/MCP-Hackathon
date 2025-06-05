@@ -1,6 +1,6 @@
 import requests
 import json
-
+import psycopg2
 
 def api_call(
     method="GET",
@@ -112,6 +112,7 @@ def api_call(
             method=method,
         )        
         return result
+    
     except Exception as e:
         return f"Error making API call: {str(e)}"
 
