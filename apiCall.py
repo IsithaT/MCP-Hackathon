@@ -1,6 +1,6 @@
 import requests
 import json
-
+import psycopg2
 
 def api_call(
     method="GET",
@@ -111,7 +111,25 @@ def api_call(
             headers=headers,
             method=method,
         )
+
+        conn = psycopg2.connect(
+            database = "testdb", 
+            user = "postgres", 
+            host= 'localhost',
+            password = "js205112*",
+            port = 5432
+        )
+        cur = conn.cursor()
+        cur.execute('select * from api_configurations')
+
+        rows = cur.fetchall()
+        conn.commit()
+        conn.close()
+        for row in rows:
+            print(row)
+        
         return result
+    
     except Exception as e:
         return f"Error making API call: {str(e)}"
 
