@@ -220,7 +220,9 @@ def validate_api_call(
         }
 
         # Generate unique config ID
-        config_str = json.dumps(config_data, sort_keys=True)
+        config_str = json.dumps(config_data, sort_keys=True) + str(
+            datetime.now().timestamp()
+        )
         config_id = int(hashlib.md5(config_str.encode()).hexdigest()[:8], 16)
 
         # Calculate timestamps
