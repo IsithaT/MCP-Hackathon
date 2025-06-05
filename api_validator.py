@@ -238,6 +238,7 @@ def validate_api_call(
             database = "testdb", 
             user = "postgres", 
             host= 'localhost',
+            password = "12345",
             port = 5432
         )
         cur = conn.cursor()
