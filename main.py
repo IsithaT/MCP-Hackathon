@@ -6,7 +6,7 @@ import json
 
 # API Validation Tab
 validation_tab = gr.Interface(
-    fn=lambda *args: json.dumps(validate_api_call(*args), indent=2),
+    fn=validate_api_call,
     inputs=[
         gr.Textbox(
             label="MCP API Key", placeholder="Enter your MCP API key", type="password"
@@ -101,7 +101,7 @@ validation_tab = gr.Interface(
 
 # Scheduler Setup Tab
 scheduler_tab = gr.Interface(
-    fn=lambda *args: json.dumps(setup_scheduler(*args), indent=2),
+    fn=setup_scheduler,
     inputs=[
         gr.Number(label="Config ID (from validation step)", value=None),
         gr.Textbox(
