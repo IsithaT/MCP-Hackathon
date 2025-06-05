@@ -116,7 +116,6 @@ def api_call(
             database = "testdb", 
             user = "postgres", 
             host= 'localhost',
-            password = "js205112*",
             port = 5432
         )
         cur = conn.cursor()
