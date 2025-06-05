@@ -1,9 +1,8 @@
 import apiCall
 import json
-import os
 from datetime import datetime, timedelta
 import hashlib
-
+import psycopg2
 
 def validate_api_call(
     mcp_api_key,
@@ -234,6 +233,22 @@ def validate_api_call(
 
         # Store configuration
         # TODO: Implement database
+
+        conn = psycopg2.connect(
+            database = "testdb", 
+            user = "postgres", 
+            host= 'localhost',
+            port = 5432
+        )
+        cur = conn.cursor()
+        cur.execute('select * from api_configurations')
+
+        rows = cur.fetchall()
+        conn.commit()
+        conn.close()
+        for row in rows:
+            print(row)
+    
 
         # Return success response
         return {
