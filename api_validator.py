@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 import hashlib
 import psycopg2
 
+
 def validate_api_call(
     mcp_api_key,
     name,
@@ -235,21 +236,56 @@ def validate_api_call(
         # TODO: Implement database
 
         conn = psycopg2.connect(
-            database = "testdb", 
-            user = "postgres", 
-            host= 'localhost',
-            password = "12345",
-            port = 5432
+            database="testdb",
+            user="postgres",
+            host="localhost",
+            password="12345",
+            port=5432,
         )
-        cur = conn.cursor()
-        cur.execute('select * from api_configurations')
 
-        rows = cur.fetchall()
+        cur = conn.cursor()
+
+        cur.execute(
+            """
+            INSERT INTO api_configurations (
+            id, mcp_api_key, name, description, method,
+            base_url, endpoint, params, headers, additional_params,
+            is_validated, is_active, stop, schedule_interval_minutes,
+            time_to_start, created_at, validated_at
+            ) VALUES (
+            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+            %s, %s, %s, %s, %s, %s, %s
+            )
+            """,
+            (
+                config_id,
+                mcp_api_key,
+                name,
+                description,
+                method,
+                base_url,
+                endpoint,
+                json.dumps(apiCall.parse_key_value_string(param_keys_values)),
+                json.dumps(apiCall.parse_key_value_string(header_keys_values)),
+                additional_params,
+                False,
+                False,
+                False,
+                schedule_interval_minutes,
+                start_datetime,
+                created_at,
+                None,
+            ),
+        )
+
         conn.commit()
-        conn.close()
+        cur.execute("SELECT * FROM api_configurations WHERE id = %s", (config_id,))
+        rows = cur.fetchall()
         for row in rows:
             print(row)
-    
+
+        conn.close()
+        cur.close()
 
         # Return success response
         return {
@@ -330,6 +366,7 @@ def setup_scheduler(config_id, mcp_api_key):
         "message": "Function not implemented yet; this is a placeholder.",
         "config_id": config_id,
     }
+
 
 ## testing
 if __name__ == "__main__":
