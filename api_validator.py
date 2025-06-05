@@ -96,7 +96,7 @@ def validate_api_call(
     {
         "success": True,
         "config_id": 123,
-        "message": "API call validated and stored successfully",
+        "message": "API call tested and stored successfully",
         "sample_response": {...},
         "stop_at": "2025-06-11T12:00:00Z",
         "start_at": "2025-06-04T12:00:00Z"
@@ -228,7 +228,7 @@ def validate_api_call(
                 "stop_at": stop_at.isoformat(),
                 # @JamezyKim This will be used to track the status of whether the api is confirmed or not
                 "is_validated": False,
-                "sample_response": result,
+                "api_response": result,
             }
         )
 
@@ -239,8 +239,12 @@ def validate_api_call(
         return {
             "success": True,
             "config_id": config_id,
-            "message": f"API call validated and stored successfully for '{name}'",
-            "sample_response": result,
+            "message": f"API call tested and stored successfully for '{name}'. Use this config_id in setup_scheduler() to activate monitoring.",
+            "sample_response": (
+                json.loads(result)
+                if result.startswith("{") or result.startswith("[")
+                else result
+            ),
             "start_at": start_datetime.isoformat(),
             "stop_at": stop_at.isoformat(),
             "schedule_interval_minutes": schedule_interval_minutes,
@@ -316,16 +320,16 @@ if __name__ == "__main__":
     # Example usage
     response = validate_api_call(
         mcp_api_key="your_api_key",
-        name="NVDA Stock Price",
-        description="Monitor the stock price of NVIDIA",
+        name="Dog Facts API",
+        description="Monitor random dog facts from a free API",
         method="GET",
-        base_url="https://api.example.com",
-        endpoint="stocks/NVDA",
+        base_url="https://dogapi.dog",
+        endpoint="api/v2/facts",
         param_keys_values="",
         header_keys_values="",
         additional_params="{}",
         schedule_interval_minutes=20,
         stop_after_hours=24,
-        start_time=None,
+        start_time="",
     )
     print(response)

@@ -1,27 +1,12 @@
 import gradio as gr
 from apiCall import api_call
 from api_validator import validate_api_call, setup_scheduler
-
-
-def format_validation_result(result):
-    """Format validation result for display"""
-    if result["success"]:
-        return f"✅ Success!\n\nConfig ID: {result['config_id']}\nMessage: {result['message']}\n\nSample Response:\n{result.get('sample_response', 'No sample response')}"
-    else:
-        return f"❌ Failed!\n\nMessage: {result['message']}"
-
-
-def format_scheduler_result(result):
-    """Format scheduler result for display"""
-    if result["success"]:
-        return f"✅ Scheduler Active!\n\nConfig ID: {result['config_id']}\nMessage: {result['message']}\n\nSchedule Details:\n{result.get('schedule_interval_minutes', 'N/A')} minutes interval\nStops at: {result.get('stop_at', 'N/A')}"
-    else:
-        return f"❌ Scheduler Failed!\n\nMessage: {result['message']}"
+import json
 
 
 # API Validation Tab
 validation_tab = gr.Interface(
-    fn=lambda *args: format_validation_result(validate_api_call(*args)),
+    fn=lambda *args: json.dumps(validate_api_call(*args), indent=2),
     inputs=[
         gr.Textbox(
             label="MCP API Key", placeholder="Enter your MCP API key", type="password"
@@ -66,11 +51,57 @@ validation_tab = gr.Interface(
     outputs=gr.Textbox(label="Validation Result", lines=10),
     title="API Validation & Storage",
     description="STEP 1: Validate and test your API configuration. This tool tests the API call and stores the configuration if successful. If validation fails, retry with corrected parameters. If validation succeeds, proceed directly to 'Activate Scheduler' tab with the returned Config ID. Required for LLM tools that need to monitor external APIs periodically. Max monitoring period is 1 week (168 hours).",
+    flagging_mode="manual",
+    flagging_options=["Invalid Request", "API Error", "Config Issue", "Other"],
+    examples=[
+        [
+            "test_mcp_key_123",
+            "Dog Facts Monitor",
+            "Monitor random dog facts from a free API",
+            "GET",
+            "https://dogapi.dog",
+            "api/v2/facts",
+            "",
+            "",
+            "{}",
+            30,
+            2,
+            "",
+        ],
+        [
+            "test_mcp_key_456",
+            "XIVAPI Item Search",
+            "Monitor FFXIV item data",
+            "GET",
+            "https://v2.xivapi.com/api",
+            "search",
+            'query: Name~"popoto"\nsheets: Item\nfields: Name,Description\nlanguage: en\nlimit: 1',
+            "",
+            "{}",
+            60,
+            4,
+            "",
+        ],
+        [
+            "test_mcp_key_789",
+            "GitHub Issues Monitor",
+            "Monitor TypeScript repository issues",
+            "GET",
+            "https://api.github.com",
+            "repos/microsoft/TypeScript/issues",
+            "state: open\nper_page: 5",
+            "Accept: application/vnd.github.v3+json\nUser-Agent: MCP-Monitor",
+            "{}",
+            120,
+            12,
+            "",
+        ],
+    ],
 )
 
 # Scheduler Setup Tab
 scheduler_tab = gr.Interface(
-    fn=lambda *args: format_scheduler_result(setup_scheduler(*args)),
+    fn=lambda *args: json.dumps(setup_scheduler(*args), indent=2),
     inputs=[
         gr.Number(label="Config ID (from validation step)", value=None),
         gr.Textbox(
@@ -80,6 +111,18 @@ scheduler_tab = gr.Interface(
     outputs=gr.Textbox(label="Scheduler Result", lines=8),
     title="Scheduler Setup",
     description="STEP 2: Activate periodic monitoring for a validated API configuration. PREREQUISITE: Must complete validation step first and obtain a Config ID. This tool sets up automated recurring API calls based on the validated configuration. Use the Config ID from the validation step output.",
+    flagging_mode="manual",
+    flagging_options=[
+        "Config Not Found",
+        "Invalid API Key",
+        "Scheduler Error",
+        "Other",
+    ],
+    examples=[
+        [123456789, "test_mcp_key_123"],
+        [987654321, "test_mcp_key_456"],
+        [456789123, "test_mcp_key_789"],
+    ],
 )
 
 # Create tabbed interface
