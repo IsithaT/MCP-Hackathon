@@ -223,7 +223,7 @@ def validate_api_call(
         config_str = json.dumps(config_data, sort_keys=True) + str(
             datetime.now().timestamp()
         )
-        config_id = int(hashlib.md5(config_str.encode()).hexdigest()[:8], 16)
+        config_id = int(hashlib.md5(config_str.encode()).hexdigest()[:7], 16)
 
         # Calculate timestamps
         created_at = datetime.now()
