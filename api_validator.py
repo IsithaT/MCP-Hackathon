@@ -251,7 +251,7 @@ def validate_api_call(
         cur.execute(
             """
             INSERT INTO api_configurations (
-            id, mcp_api_key, name, description, method,
+            config_id, mcp_api_key, name, description, method,
             base_url, endpoint, params, headers, additional_params,
             is_validated, is_active, stop, schedule_interval_minutes,
             time_to_start, created_at, validated_at
@@ -275,7 +275,7 @@ def validate_api_call(
                 False,
                 False,
                 schedule_interval_minutes,
-                start_datetime,
+                start_time,
                 created_at,
                 None,
             ),
