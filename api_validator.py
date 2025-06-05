@@ -25,7 +25,7 @@ def validate_api_call(
     additional_params,
     schedule_interval_minutes,
     stop_after_hours,
-    start_time,
+    time_to_start,
 ):
     """
     TOOL: Validate and store API configuration for monitoring.
@@ -51,7 +51,7 @@ def validate_api_call(
     - additional_params: Optional JSON string for complex parameters
     - schedule_interval_minutes: Minutes between calls
     - stop_after_hours: Hours after which to stop (max 168 = 1 week)
-    - start_time: When to start the monitoring (datetime string or None for immediate)
+    - time_to_start: When to start the monitoring (datetime string or None for immediate)
 
     Input Examples:
 
@@ -67,7 +67,7 @@ def validate_api_call(
         additional_params: "{}"
         schedule_interval_minutes: 30
         stop_after_hours: 24
-        start_time: ""
+        time_to_start: ""
 
     2. API with complex parameters:
         mcp_api_key: "your_mcp_key_here"
@@ -81,7 +81,7 @@ def validate_api_call(
         additional_params: '{"severity": ["severe", "extreme"], "types": ["tornado", "hurricane"]}'
         schedule_interval_minutes: 15
         stop_after_hours: 48
-        start_time: "2024-06-15 09:00:00"
+        time_to_start: "2024-06-15 09:00:00"
 
     3. GitHub API monitoring:
         mcp_api_key: "your_mcp_key_here"
@@ -95,7 +95,7 @@ def validate_api_call(
         additional_params: "{}"
         schedule_interval_minutes: 60
         stop_after_hours: 168
-        start_time: ""
+        time_to_start: ""
 
     Returns:
     - Dictionary with success status, config_id (needed for setup_scheduler), message, and sample_response
@@ -164,13 +164,13 @@ def validate_api_call(
                 "config_id": None,
             }
 
-        # Validate start_time if provided
-        if start_time:
+        # Validate time_to_start if provided
+        if time_to_start:
             try:
-                start_datetime = datetime.fromisoformat(
-                    start_time.replace("Z", "+00:00")
+                parsed_start_time = datetime.fromisoformat(
+                    time_to_start.replace("Z", "+00:00")
                 )
-                if start_datetime < datetime.now():
+                if parsed_start_time < datetime.now():
                     return {
                         "success": False,
                         "message": "Start time cannot be in the past",
@@ -183,7 +183,7 @@ def validate_api_call(
                     "config_id": None,
                 }
         else:
-            start_datetime = datetime.now()
+            parsed_start_time = datetime.now()
 
         # Test the API call
         result = apiCall.api_call(
@@ -216,7 +216,6 @@ def validate_api_call(
             "additional_params": additional_params,
             "schedule_interval_minutes": schedule_interval_minutes,
             "stop_after_hours": stop_after_hours,
-            "start_time": start_time,
         }
 
         # Generate unique config ID
@@ -227,14 +226,14 @@ def validate_api_call(
 
         # Calculate timestamps
         created_at = datetime.now()
-        stop_at = start_datetime + timedelta(hours=stop_after_hours)
+        stop_at = parsed_start_time + timedelta(hours=stop_after_hours)
 
         # Add metadata to config
         config_data.update(
             {
                 "config_id": config_id,
                 "created_at": created_at.isoformat(),
-                "start_at": start_datetime.isoformat(),
+                "start_at": parsed_start_time.isoformat(),
                 "stop_at": stop_at.isoformat(),
                 # @JamezyKim This will be used to track the status of whether the api is confirmed or not
                 "is_validated": False,
@@ -290,7 +289,7 @@ def validate_api_call(
                 False,
                 False,
                 schedule_interval_minutes,
-                start_datetime,
+                parsed_start_time,
                 created_at,
                 None,
             ),
@@ -315,7 +314,7 @@ def validate_api_call(
                 if result.startswith("{") or result.startswith("[")
                 else result
             ),
-            "start_at": start_datetime.isoformat(),
+            "start_at": parsed_start_time.isoformat(),
             "stop_at": stop_at.isoformat(),
             "schedule_interval_minutes": schedule_interval_minutes,
         }
@@ -401,6 +400,6 @@ if __name__ == "__main__":
         additional_params="{}",
         schedule_interval_minutes=20,
         stop_after_hours=24,
-        start_time="",
+        time_to_start="",
     )
     print(response)
