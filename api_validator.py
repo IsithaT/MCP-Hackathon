@@ -20,7 +20,16 @@ def validate_api_call(
     start_time,
 ):
     """
-    Validate API call parameters and store successful configuration.
+    TOOL: Validate and store API configuration for monitoring.
+
+    PURPOSE: Test an API endpoint and store the configuration if successful. This is STEP 1
+    of the monitoring setup process. If validation fails, retry with corrected parameters.
+    If successful, use the returned config_id in setup_scheduler() function.
+
+    WORKFLOW:
+    1. Call this function to validate API configuration
+    2. If success=False: Fix parameters and retry this function
+    3. If success=True: Use config_id in setup_scheduler() to activate monitoring
 
     Parameters:
     - mcp_api_key: MCP API key serves as user identifier
@@ -36,8 +45,52 @@ def validate_api_call(
     - stop_after_hours: Hours after which to stop (max 168 = 1 week)
     - start_time: When to start the monitoring (datetime string or None for immediate)
 
+    Input Examples:
+
+    1. Simple GET request to monitor stock price:
+        mcp_api_key: "your_mcp_key_here"
+        name: "NVDA Stock Price"
+        description: "Monitor NVIDIA stock price every 30 minutes"
+        method: "GET"
+        base_url: "https://api.example.com"
+        endpoint: "stocks/NVDA"
+        param_keys_values: "symbol: NVDA\ninterval: 1min"
+        header_keys_values: "Authorization: Bearer your_token"
+        additional_params: "{}"
+        schedule_interval_minutes: 30
+        stop_after_hours: 24
+        start_time: ""
+
+    2. API with complex parameters:
+        mcp_api_key: "your_mcp_key_here"
+        name: "Weather Alert Monitor"
+        description: "Monitor severe weather alerts"
+        method: "POST"
+        base_url: "https://api.weather.com"
+        endpoint: "alerts"
+        param_keys_values: "lat: 40.7128\nlon: -74.0060"
+        header_keys_values: "X-API-Key: weather_key\nContent-Type: application/json"
+        additional_params: '{"severity": ["severe", "extreme"], "types": ["tornado", "hurricane"]}'
+        schedule_interval_minutes: 15
+        stop_after_hours: 48
+        start_time: "2024-06-15 09:00:00"
+
+    3. GitHub API monitoring:
+        mcp_api_key: "your_mcp_key_here"
+        name: "Repo Issues Monitor"
+        description: "Monitor new issues in repository"
+        method: "GET"
+        base_url: "https://api.github.com"
+        endpoint: "repos/microsoft/TypeScript/issues"
+        param_keys_values: "state: open\nper_page: 10"
+        header_keys_values: "Accept: application/vnd.github.v3+json\nUser-Agent: MyApp"
+        additional_params: "{}"
+        schedule_interval_minutes: 60
+        stop_after_hours: 168
+        start_time: ""
+
     Returns:
-    - Dictionary with success status, config_id, message, and sample_response
+    - Dictionary with success status, config_id (needed for setup_scheduler), message, and sample_response
 
     Example return:
     {
@@ -48,6 +101,8 @@ def validate_api_call(
         "stop_at": "2025-06-11T12:00:00Z",
         "start_at": "2025-06-04T12:00:00Z"
     }
+
+    NEXT STEP: If success=True, call setup_scheduler(config_id, mcp_api_key) to activate monitoring
     """
     try:
         # Validate input parameters
@@ -171,7 +226,6 @@ def validate_api_call(
                 "created_at": created_at.isoformat(),
                 "start_at": start_datetime.isoformat(),
                 "stop_at": stop_at.isoformat(),
-
                 # @JamezyKim This will be used to track the status of whether the api is confirmed or not
                 "is_validated": False,
                 "sample_response": result,
@@ -202,11 +256,38 @@ def validate_api_call(
 
 def setup_scheduler(config_id, mcp_api_key):
     """
-    Set up periodic calling for a validated API configuration.
+    TOOL: Activate periodic monitoring for a validated API configuration.
+
+    PURPOSE: Start automated recurring API calls based on a previously validated configuration.
+    This is STEP 2 of the monitoring setup process.
+
+    PREREQUISITE: Must call validate_api_call() first and obtain a config_id from successful validation.
+
+    WORKFLOW:
+    1. First call validate_api_call() to get config_id
+    2. If validation successful, call this function with the config_id
+    3. Monitoring will run automatically according to the validated schedule
 
     Parameters:
-    - config_id: The ID from validated configuration
-    - mcp_api_key: User's MCP API key for verification
+    - config_id: The ID from successful validate_api_call() execution (required)
+    - mcp_api_key: User's MCP API key for verification (must match validation step)
+
+    Input Examples:
+
+    1. Activate scheduler for stock monitoring:
+        config_id: 123456789
+        mcp_api_key: "your_mcp_key_here"
+
+    2. Activate scheduler for weather alerts:
+        config_id: 987654321
+        mcp_api_key: "your_mcp_key_here"
+
+    3. Activate scheduler for GitHub issues:
+        config_id: 456789123
+        mcp_api_key: "your_mcp_key_here"
+
+    NOTE: The config_id must be obtained from a successful validate_api_call() response.
+    The mcp_api_key must match the one used during validation.
 
     Returns:
     - Dictionary with success status and scheduling details
@@ -220,11 +301,13 @@ def setup_scheduler(config_id, mcp_api_key):
         "stop_at": "2025-06-11T12:00:00Z",
         "next_call_at": "2025-06-04T12:20:00Z"
     }
+
+    ERROR HANDLING: If config_id not found or invalid, returns success=False with error message
     """
 
     return {
         "success": False,
-        "message": "Function not implemented yet",
+        "message": "Function not implemented yet; this is a placeholder.",
         "config_id": config_id,
     }
 

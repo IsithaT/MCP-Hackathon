@@ -65,7 +65,7 @@ validation_tab = gr.Interface(
     ],
     outputs=gr.Textbox(label="Validation Result", lines=10),
     title="API Validation & Storage",
-    description="Validate your API configuration and store it for scheduled monitoring. Max monitoring period is 1 week (168 hours).",
+    description="STEP 1: Validate and test your API configuration. This tool tests the API call and stores the configuration if successful. If validation fails, retry with corrected parameters. If validation succeeds, proceed directly to 'Activate Scheduler' tab with the returned Config ID. Required for LLM tools that need to monitor external APIs periodically. Max monitoring period is 1 week (168 hours).",
 )
 
 # Scheduler Setup Tab
@@ -79,7 +79,7 @@ scheduler_tab = gr.Interface(
     ],
     outputs=gr.Textbox(label="Scheduler Result", lines=8),
     title="Scheduler Setup",
-    description="Activate scheduled monitoring for a validated API configuration.",
+    description="STEP 2: Activate periodic monitoring for a validated API configuration. PREREQUISITE: Must complete validation step first and obtain a Config ID. This tool sets up automated recurring API calls based on the validated configuration. Use the Config ID from the validation step output.",
 )
 
 # Create tabbed interface
