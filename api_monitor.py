@@ -30,7 +30,7 @@ def validate_api_configuration(
     PURPOSE: Test an API endpoint and store the configuration if successful. This is STEP 1
     of the monitoring setup process. If validation fails, retry with corrected parameters.    If successful, use the returned config_id in activate_monitoring() function.
 
-    ⚠️ CRITICAL: Even if success=True, you MUST manually check the 'sample_response' field
+    CRITICAL: Even if success=True, you MUST manually check the 'sample_response' field
     before proceeding to activate_monitoring(). The API call may return success=True but contain
     error messages (like "401 Unauthorized", "Invalid API key", etc.) in the sample_response.
 
@@ -386,3 +386,52 @@ if __name__ == "__main__":
         time_to_start="",
     )
     print(response)
+
+
+def retrieve_monitored_data(config_id, mcp_api_key):
+    """
+    TOOL: Retrieve monitored data for a specific API configuration.
+
+    PURPOSE: Fetch the latest monitored data for a given configuration ID.
+    This is STEP 3 of the monitoring setup process.
+
+    PREREQUISITE: Must call validate_api_configuration() first and obtain a config_id from successful validation, then activate_monitoring() to start monitoring.
+    
+    This function can be called at any time after monitoring activation to retrieve the latest data collected by the monitoring system.
+
+    Parameters:
+    - config_id: The ID of the API configuration to retrieve data for (required)
+    - mcp_api_key: User's MCP API key for verification (must match validation step)
+
+    Input Examples:
+    1. Retrieve data for stock monitoring:
+        config_id: 123456789
+        mcp_api_key: "your_mcp_key_here"
+
+    2. Retrieve data for weather alerts:
+        config_id: 987654321
+        mcp_api_key: "your_mcp_key_here"
+
+    Returns:
+    - Dictionary with success status, data, and message
+    - If no data found, returns success=False with appropriate message
+    Example return:
+    {
+        "success": True,
+        "data": [
+            {"timestamp": "2025-06-04T12:00:00Z", "response": {...}},
+            {"timestamp": "2025-06-04T12:20:00Z", "response": {...}},
+        ],
+        "message": "Data retrieved successfully for config_id 123456789"
+    }
+    - If config_id not found or invalid, returns success=False with error message
+    - If mcp_api_key does not match, returns success=False with error message
+
+    Example error return:
+    {
+        "success": False,
+        "message": "Invalid config_id or mcp_api_key",
+        "data": []
+    }
+    ERROR HANDLING: If config_id not found or invalid, returns success=False with error message
+    """
