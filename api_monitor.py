@@ -5,6 +5,11 @@ import hashlib
 import psycopg2
 import os
 from dotenv import load_dotenv
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.interval import IntervalTrigger
+from apscheduler.triggers.date import DateTrigger
+import time
+import threading
 
 # Load environment variables from .env file
 load_dotenv()
@@ -360,12 +365,123 @@ def activate_monitoring(config_id, mcp_api_key):
 
     ERROR HANDLING: If config_id not found or invalid, returns success=False with error message
     """
+    #get config from database
 
+
+    #check if config_id is valid!
+
+    #need to extract 
+    '''
+    mcp_api_key,
+    name,
+    description,
+    method,
+    base_url,
+    endpoint,
+    param_keys_values,
+    header_keys_values,
+    additional_params,
+    schedule_interval_minutes,
+    stop_after_hours,
+    time_to_start,
+    this
+    '''
+
+    # using time_to_start, schedule_interval_minutes, and stop_after_hours
+    #label using name and description
+    
+   
+    
+    
+
+
+    #attempt to create the scheduler
+    try:
+        create_schedule_thread(
+            tag = "defualt tag",  # this is not a function
+            start_delay_sec=1,  # Use the time_to_start if provided
+            interval_sec=3,  # Convert schedule_interval_minutes to seconds
+            duration_hours=0.015,  # Use stop_after_hours if provided
+            config_id=config_id,  # Pass the config_id for tracking
+        )
+
+        
+
+
+
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"Failed to create scheduler: {str(e)}",
+            "config_id": config_id,
+        }
+
+    
+    # if we get down here something is horribly wrong, we should never get here
     return {
         "success": False,
-        "message": "Function not implemented yet; this is a placeholder.",
+        "message": "SOMETHING WENT HORRIBLY WRONG, THIS SHOULD NEVER HAPPEN",
         "config_id": config_id,
     }
+
+# 🔁 Create a new generator per schedule
+def make_data_generator(tag):
+    i = 0
+    while True:
+        yield f"{tag}-{i}"
+        i += 1
+
+# 🧱 Function that runs inside each thread
+def schedule_runner(tag, start_delay_sec, interval_sec, duration_hours,config_id):
+    scheduler = BackgroundScheduler()
+    start_time = datetime.now() + timedelta(seconds=start_delay_sec)
+    end_time = start_time + timedelta(hours=duration_hours)
+    generator = make_data_generator(tag)
+
+    # The actual job to be scheduled
+    def job_func(config_id):
+        value = next(generator)
+        print(f"[{tag}] 🔄 Job ran with: {value} at {datetime.now()}")
+        yield {
+        "success": True,
+        "message": f"[{tag}] 🔄 Job ran with: {value} at {datetime.now()}",
+        "config_id": config_id}
+        
+
+    # Graceful shutdown job
+    def shutdown_func():
+        print(f"[{tag}] ⛔ Scheduler shutting down at {datetime.now()}")
+        scheduler.shutdown()
+
+    # Add the jobs
+    scheduler.add_job(
+        job_func(config_id),
+        trigger=IntervalTrigger(start_date=start_time, seconds=interval_sec, end_date=end_time)
+    )
+    scheduler.add_job(
+        shutdown_func,
+        trigger=DateTrigger(run_date=end_time)
+    )
+
+    scheduler.start()
+    print(f"[{tag}] 🕒 Scheduler running from {start_time} to {end_time}, every {interval_sec}s.")
+
+    # Keep thread alive while scheduler is running
+    while scheduler.running:
+        time.sleep(1)
+
+    print(f"[{tag}] ✅ Scheduler completed.")
+
+# 🧵 Thread spawner
+def create_schedule_thread(tag, start_delay_sec, interval_sec, duration_hours,config_id):
+    thread = threading.Thread(
+        target=schedule_runner,
+        args=(tag, start_delay_sec, interval_sec, duration_hours,config_id),
+        daemon=True  # Automatically closes with main program
+    )
+    thread.start()
+    return thread
+
 
 
 ## testing
@@ -386,3 +502,5 @@ if __name__ == "__main__":
         time_to_start="",
     )
     print(response)
+
+    
