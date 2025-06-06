@@ -3,7 +3,7 @@
     "target": "es2017",
     "module": "commonjs",
     "outDir": "./dist",
-  "rootDir": "./server",
+  "rootDir": "./", 
   "strict": true,
   "esModuleInterop": true,
   "skipLibCheck": true,
