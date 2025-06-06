@@ -3,11 +3,33 @@ import json
 from datetime import datetime, timedelta
 import hashlib
 import psycopg2
+import psycopg2.extras
 import os
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
+
+
+def connect_to_db():
+    """
+    Connect to the PostgreSQL database using environment variables.
+    Returns a connection object.
+    """
+    db_password = os.getenv("DB_PASSWORD")
+    if not db_password:
+        raise ValueError(
+            "Database password not found in environment variables. Please set DB_PASSWORD."
+        )
+
+    return psycopg2.connect(
+        database="testdb",
+        user="postgres",
+        host="localhost",
+        password=db_password,
+        port=5432,
+        cursor_factory=psycopg2.extras.DictCursor,
+    )
 
 
 def validate_api_configuration(
@@ -228,67 +250,58 @@ def validate_api_configuration(
         )
 
         # Store configuration
-        # TODO: Implement database
+        try:
+            conn = connect_to_db()
+            cur = conn.cursor()
 
-        db_password = os.getenv("DB_PASSWORD")
-        if not db_password:
+            cur.execute(
+                """
+                INSERT INTO api_configurations (
+                config_id, mcp_api_key, name, description, method,
+                base_url, endpoint, params, headers, additional_params,
+                is_validated, is_active, stop, schedule_interval_minutes,
+                time_to_start, created_at, validated_at
+                ) VALUES (
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                %s, %s, %s, %s, %s, %s, %s
+                )
+                """,
+                (
+                    config_id,
+                    mcp_api_key,
+                    name,
+                    description,
+                    method,
+                    base_url,
+                    endpoint,
+                    json.dumps(api_client.parse_key_value_string(param_keys_values)),
+                    json.dumps(api_client.parse_key_value_string(header_keys_values)),
+                    additional_params,
+                    False,
+                    False,
+                    False,
+                    schedule_interval_minutes,
+                    parsed_start_time,
+                    created_at,
+                    None,
+                ),
+            )
+
+            conn.commit()
+            cur.execute("SELECT * FROM api_configurations WHERE id = %s", (config_id,))
+            rows = cur.fetchall()
+            for row in rows:
+                print(row)
+
+            conn.close()
+            cur.close()
+
+        except Exception as db_error:
             return {
                 "success": False,
-                "message": "Database password not found in environment variables. Please set DB_PASSWORD.",
+                "message": f"Database error: {str(db_error)}",
                 "config_id": None,
             }
-
-        conn = psycopg2.connect(
-            database="testdb",
-            user="postgres",
-            host="localhost",
-            password=db_password,
-            port=5432,
-        )
-
-        cur = conn.cursor()
-
-        cur.execute(
-            """
-            INSERT INTO api_configurations (
-            config_id, mcp_api_key, name, description, method,
-            base_url, endpoint, params, headers, additional_params,
-            is_validated, is_active, stop, schedule_interval_minutes,
-            time_to_start, created_at, validated_at
-            ) VALUES (
-            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-            %s, %s, %s, %s, %s, %s, %s
-            )
-            """,
-            (
-                config_id,
-                mcp_api_key,
-                name,
-                description,
-                method,
-                base_url,
-                endpoint,
-                json.dumps(api_client.parse_key_value_string(param_keys_values)),
-                json.dumps(api_client.parse_key_value_string(header_keys_values)),
-                additional_params,
-                False,
-                False,
-                False,
-                schedule_interval_minutes,
-                parsed_start_time,
-                created_at,
-                None,
-            ),
-        )
-
-        conn.commit()
-        cur.execute("SELECT * FROM api_configurations WHERE id = %s", (config_id,))
-        rows = cur.fetchall()
-        for row in rows:
-            print(row)
-
-        conn.close()
-        cur.close()
 
         # Return success response
         return {
@@ -318,8 +331,8 @@ def activate_monitoring(config_id, mcp_api_key):
     TOOL: Activate periodic monitoring for a validated API configuration.
 
     PURPOSE: Start automated recurring API calls based on a previously validated configuration.
-    This is STEP 2 of the monitoring setup process.    
-    
+    This is STEP 2 of the monitoring setup process.
+
     PREREQUISITE: Must call validate_api_configuration() first and obtain a config_id from successful validation. Make sure that the sample_response is what you expect
     to see before proceeding with this function.
 
@@ -360,32 +373,22 @@ def activate_monitoring(config_id, mcp_api_key):
 
     ERROR HANDLING: If config_id not found or invalid, returns success=False with error message
     """
+    try:
+        conn = connect_to_db()
+        # TODO: Implement activation logic here
+        conn.close()
 
-    return {
-        "success": False,
-        "message": "Function not implemented yet; this is a placeholder.",
-        "config_id": config_id,
-    }
-
-
-## testing
-if __name__ == "__main__":
-    # Example usage
-    response = validate_api_configuration(
-        mcp_api_key="your_api_key",
-        name="Dog Facts API",
-        description="Monitor random dog facts from a free API",
-        method="GET",
-        base_url="https://dogapi.dog",
-        endpoint="api/v2/facts",
-        param_keys_values="",
-        header_keys_values="",
-        additional_params="{}",
-        schedule_interval_minutes=20,
-        stop_after_hours=24,
-        time_to_start="",
-    )
-    print(response)
+        return {
+            "success": False,
+            "message": "Function not implemented yet; this is a placeholder.",
+            "config_id": config_id,
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"Database connection failed: {str(e)}",
+            "config_id": config_id,
+        }
 
 
 def retrieve_monitored_data(config_id, mcp_api_key):
@@ -396,7 +399,7 @@ def retrieve_monitored_data(config_id, mcp_api_key):
     This is STEP 3 of the monitoring setup process.
 
     PREREQUISITE: Must call validate_api_configuration() first and obtain a config_id from successful validation, then activate_monitoring() to start monitoring.
-    
+
     This function can be called at any time after monitoring activation to retrieve the latest data collected by the monitoring system.
 
     Parameters:
@@ -435,13 +438,69 @@ def retrieve_monitored_data(config_id, mcp_api_key):
     }
     ERROR HANDLING: If config_id not found or invalid, returns success=False with error message
     """
-    # TODO: Implement database retrieval logic
-    # 1. Connect to the database
-    # 2. Query the api_configurations table for the given config_id
-    # 3. If found, retrieve the associated monitored data
-    # 4. Return the data in the specified format
-    return {
-        "success": False,
-        "message": "Function not implemented yet; this is a placeholder.",
-        "data": [],
-    }
+    try:
+        conn = connect_to_db()
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT * FROM api_configurations WHERE config_id = %s", (config_id,)
+        )
+        config = cur.fetchone()
+
+        if not config:
+            conn.close()
+            return {
+                "success": False,
+                "message": "Invalid config_id",
+                "data": [],
+            }
+        print(config)
+        # 2. Query the api_configurations table for the given config_id
+        # 3. If found, retrieve the associated monitored data
+        # 4. Return the data in the specified format
+        conn.close()
+        return {
+            "success": False,
+            "message": "Function not implemented yet; this is a placeholder.",
+            "data": [],
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"Database connection failed: {str(e)}",
+            "data": [],
+        }
+
+
+## testing
+if __name__ == "__main__":
+    validation_response = validate_api_configuration(
+        mcp_api_key="your_api_key",
+        name="Dog Facts API",
+        description="Monitor random dog facts from a free API",
+        method="GET",
+        base_url="https://dogapi.dog",
+        endpoint="api/v2/facts",
+        param_keys_values="",
+        header_keys_values="",
+        additional_params="{}",
+        schedule_interval_minutes=20,
+        stop_after_hours=24,
+        time_to_start="",
+    )
+    print(validation_response)
+    print()
+    print()
+
+    activate_monitoring_response = activate_monitoring(
+        config_id=validation_response.get("config_id"),
+        mcp_api_key="your_api_key",
+    )
+    print(activate_monitoring_response)
+    print()
+    print()
+
+    response = retrieve_monitored_data(
+        config_id=activate_monitoring_response.get("config_id"),
+        mcp_api_key="your_api_key",
+    )
+    print(response)
