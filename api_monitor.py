@@ -318,8 +318,8 @@ def activate_monitoring(config_id, mcp_api_key):
     TOOL: Activate periodic monitoring for a validated API configuration.
 
     PURPOSE: Start automated recurring API calls based on a previously validated configuration.
-    This is STEP 2 of the monitoring setup process.    
-    
+    This is STEP 2 of the monitoring setup process.
+
     PREREQUISITE: Must call validate_api_configuration() first and obtain a config_id from successful validation. Make sure that the sample_response is what you expect
     to see before proceeding with this function.
 
