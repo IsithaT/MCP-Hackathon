@@ -3,14 +3,16 @@
 ## Steps to Run
 
 if it your first time running it:
+
 ```
 python -m venv venv
 ```
+
 then activate your virtual environment
 
 then:
 
-``` 
+```
 pip install -r requirements.txt
 ```
 
@@ -26,9 +28,11 @@ user flow ish
 6. in api_validator.py, we grab the config_id from database and set up an automated scheduler to periodically grab the required information from api and store it in database until no more events are specified that need grabbing and return such info to user upon request
 7. i think thats it
 
-### as william, my job should be to set up:
+### as william, my job should be to set up
 
 1. code that grabs config information
+   1. make sure to confirm that mcp api key matches with config id - Coleman
 2. creates a schedule for config_id
 3. attempts to grab info for api
-4. make sure that this schedule is robust hopefully 
+4. add said info to database
+5. make sure that this schedule is robust hopefully
