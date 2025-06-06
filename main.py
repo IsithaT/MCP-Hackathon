@@ -1,12 +1,12 @@
 import gradio as gr
-from apiCall import api_call
-from api_validator import validate_api_call, setup_scheduler
+from api_client import call_api
+from api_monitor import validate_api_configuration, activate_monitoring
 import json
 
 
 # API Validation Tab
 validation_tab = gr.Interface(
-    fn=validate_api_call,
+    fn=validate_api_configuration,
     inputs=[
         gr.Textbox(
             label="MCP API Key", placeholder="Enter your MCP API key", type="password"
@@ -101,7 +101,7 @@ validation_tab = gr.Interface(
 
 # Scheduler Setup Tab
 scheduler_tab = gr.Interface(
-    fn=setup_scheduler,
+    fn=activate_monitoring,
     inputs=[
         gr.Number(label="Config ID (from validation step)", value=None),
         gr.Textbox(

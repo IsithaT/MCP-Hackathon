@@ -1,10 +1,16 @@
-import apiCall
+import api_client
 import json
 from datetime import datetime, timedelta
 import hashlib
 import psycopg2
+import os
+from dotenv import load_dotenv
 
-def validate_api_call(
+# Load environment variables from .env file
+load_dotenv()
+
+
+def validate_api_configuration(
     mcp_api_key,
     name,
     description,
@@ -16,19 +22,24 @@ def validate_api_call(
     additional_params,
     schedule_interval_minutes,
     stop_after_hours,
-    start_time,
+    time_to_start,
 ):
     """
     TOOL: Validate and store API configuration for monitoring.
 
     PURPOSE: Test an API endpoint and store the configuration if successful. This is STEP 1
-    of the monitoring setup process. If validation fails, retry with corrected parameters.
-    If successful, use the returned config_id in setup_scheduler() function.
+    of the monitoring setup process. If validation fails, retry with corrected parameters.    If successful, use the returned config_id in activate_monitoring() function.
+
+    ⚠️ CRITICAL: Even if success=True, you MUST manually check the 'sample_response' field
+    before proceeding to activate_monitoring(). The API call may return success=True but contain
+    error messages (like "401 Unauthorized", "Invalid API key", etc.) in the sample_response.
 
     WORKFLOW:
     1. Call this function to validate API configuration
     2. If success=False: Fix parameters and retry this function
-    3. If success=True: Use config_id in setup_scheduler() to activate monitoring
+    3. If success=True: MANUALLY INSPECT the 'sample_response' field for errors
+    4. If sample_response contains error messages: Fix API parameters and retry validation
+    5. If sample_response looks valid: Use config_id in activate_monitoring() to activate monitoring
 
     Parameters:
     - mcp_api_key: MCP API key serves as user identifier
@@ -42,7 +53,7 @@ def validate_api_call(
     - additional_params: Optional JSON string for complex parameters
     - schedule_interval_minutes: Minutes between calls
     - stop_after_hours: Hours after which to stop (max 168 = 1 week)
-    - start_time: When to start the monitoring (datetime string or None for immediate)
+    - time_to_start: When to start the monitoring (datetime string or None for immediate)
 
     Input Examples:
 
@@ -58,7 +69,7 @@ def validate_api_call(
         additional_params: "{}"
         schedule_interval_minutes: 30
         stop_after_hours: 24
-        start_time: ""
+        time_to_start: ""
 
     2. API with complex parameters:
         mcp_api_key: "your_mcp_key_here"
@@ -72,21 +83,7 @@ def validate_api_call(
         additional_params: '{"severity": ["severe", "extreme"], "types": ["tornado", "hurricane"]}'
         schedule_interval_minutes: 15
         stop_after_hours: 48
-        start_time: "2024-06-15 09:00:00"
-
-    3. GitHub API monitoring:
-        mcp_api_key: "your_mcp_key_here"
-        name: "Repo Issues Monitor"
-        description: "Monitor new issues in repository"
-        method: "GET"
-        base_url: "https://api.github.com"
-        endpoint: "repos/microsoft/TypeScript/issues"
-        param_keys_values: "state: open\nper_page: 10"
-        header_keys_values: "Accept: application/vnd.github.v3+json\nUser-Agent: MyApp"
-        additional_params: "{}"
-        schedule_interval_minutes: 60
-        stop_after_hours: 168
-        start_time: ""
+        time_to_start: "2024-06-15 09:00:00"
 
     Returns:
     - Dictionary with success status, config_id (needed for setup_scheduler), message, and sample_response
@@ -101,7 +98,7 @@ def validate_api_call(
         "start_at": "2025-06-04T12:00:00Z"
     }
 
-    NEXT STEP: If success=True, call setup_scheduler(config_id, mcp_api_key) to activate monitoring
+    NEXT STEP: If success=True, call activate_monitoring(config_id, mcp_api_key) to activate monitoring
     """
     try:
         # Validate input parameters
@@ -155,13 +152,13 @@ def validate_api_call(
                 "config_id": None,
             }
 
-        # Validate start_time if provided
-        if start_time:
+        # Validate time_to_start if provided
+        if time_to_start:
             try:
-                start_datetime = datetime.fromisoformat(
-                    start_time.replace("Z", "+00:00")
+                parsed_start_time = datetime.fromisoformat(
+                    time_to_start.replace("Z", "+00:00")
                 )
-                if start_datetime < datetime.now():
+                if parsed_start_time < datetime.now():
                     return {
                         "success": False,
                         "message": "Start time cannot be in the past",
@@ -174,10 +171,8 @@ def validate_api_call(
                     "config_id": None,
                 }
         else:
-            start_datetime = datetime.now()
-
-        # Test the API call
-        result = apiCall.api_call(
+            parsed_start_time = datetime.now()  # Test the API call
+        result = api_client.call_api(
             method=method,
             base_url=base_url,
             endpoint=endpoint,
@@ -207,23 +202,24 @@ def validate_api_call(
             "additional_params": additional_params,
             "schedule_interval_minutes": schedule_interval_minutes,
             "stop_after_hours": stop_after_hours,
-            "start_time": start_time,
         }
 
         # Generate unique config ID
-        config_str = json.dumps(config_data, sort_keys=True)
-        config_id = int(hashlib.md5(config_str.encode()).hexdigest()[:8], 16)
+        config_str = json.dumps(config_data, sort_keys=True) + str(
+            datetime.now().timestamp()
+        )
+        config_id = int(hashlib.md5(config_str.encode()).hexdigest()[:7], 16)
 
         # Calculate timestamps
         created_at = datetime.now()
-        stop_at = start_datetime + timedelta(hours=stop_after_hours)
+        stop_at = parsed_start_time + timedelta(hours=stop_after_hours)
 
         # Add metadata to config
         config_data.update(
             {
                 "config_id": config_id,
                 "created_at": created_at.isoformat(),
-                "start_at": start_datetime.isoformat(),
+                "start_at": parsed_start_time.isoformat(),
                 "stop_at": stop_at.isoformat(),
                 # @JamezyKim This will be used to track the status of whether the api is confirmed or not
                 "is_validated": False,
@@ -234,33 +230,77 @@ def validate_api_call(
         # Store configuration
         # TODO: Implement database
 
-        conn = psycopg2.connect(
-            database = "testdb", 
-            user = "postgres", 
-            host= 'localhost',
-            port = 5432
-        )
-        cur = conn.cursor()
-        cur.execute('select * from api_configurations')
+        db_password = os.getenv("DB_PASSWORD")
+        if not db_password:
+            return {
+                "success": False,
+                "message": "Database password not found in environment variables. Please set DB_PASSWORD.",
+                "config_id": None,
+            }
 
-        rows = cur.fetchall()
+        conn = psycopg2.connect(
+            database="testdb",
+            user="postgres",
+            host="localhost",
+            password=db_password,
+            port=5432,
+        )
+
+        cur = conn.cursor()
+
+        cur.execute(
+            """
+            INSERT INTO api_configurations (
+            config_id, mcp_api_key, name, description, method,
+            base_url, endpoint, params, headers, additional_params,
+            is_validated, is_active, stop, schedule_interval_minutes,
+            time_to_start, created_at, validated_at
+            ) VALUES (
+            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+            %s, %s, %s, %s, %s, %s, %s
+            )
+            """,
+            (
+                config_id,
+                mcp_api_key,
+                name,
+                description,
+                method,
+                base_url,
+                endpoint,
+                json.dumps(api_client.parse_key_value_string(param_keys_values)),
+                json.dumps(api_client.parse_key_value_string(header_keys_values)),
+                additional_params,
+                False,
+                False,
+                False,
+                schedule_interval_minutes,
+                parsed_start_time,
+                created_at,
+                None,
+            ),
+        )
+
         conn.commit()
-        conn.close()
+        cur.execute("SELECT * FROM api_configurations WHERE id = %s", (config_id,))
+        rows = cur.fetchall()
         for row in rows:
             print(row)
-    
+
+        conn.close()
+        cur.close()
 
         # Return success response
         return {
             "success": True,
             "config_id": config_id,
-            "message": f"API call tested and stored successfully for '{name}'. Use this config_id in setup_scheduler() to activate monitoring.",
+            "message": f"API call tested and stored successfully for '{name}'. Use this config_id in activate_monitoring() to activate monitoring.",
             "sample_response": (
                 json.loads(result)
                 if result.startswith("{") or result.startswith("[")
                 else result
             ),
-            "start_at": start_datetime.isoformat(),
+            "start_at": parsed_start_time.isoformat(),
             "stop_at": stop_at.isoformat(),
             "schedule_interval_minutes": schedule_interval_minutes,
         }
@@ -273,22 +313,23 @@ def validate_api_call(
         }
 
 
-def setup_scheduler(config_id, mcp_api_key):
+def activate_monitoring(config_id, mcp_api_key):
     """
     TOOL: Activate periodic monitoring for a validated API configuration.
 
     PURPOSE: Start automated recurring API calls based on a previously validated configuration.
-    This is STEP 2 of the monitoring setup process.
-
-    PREREQUISITE: Must call validate_api_call() first and obtain a config_id from successful validation.
+    This is STEP 2 of the monitoring setup process.    
+    
+    PREREQUISITE: Must call validate_api_configuration() first and obtain a config_id from successful validation. Make sure that the sample_response is what you expect
+    to see before proceeding with this function.
 
     WORKFLOW:
-    1. First call validate_api_call() to get config_id
+    1. First call validate_api_configuration() to get config_id
     2. If validation successful, call this function with the config_id
     3. Monitoring will run automatically according to the validated schedule
 
     Parameters:
-    - config_id: The ID from successful validate_api_call() execution (required)
+    - config_id: The ID from successful validate_api_configuration() execution (required)
     - mcp_api_key: User's MCP API key for verification (must match validation step)
 
     Input Examples:
@@ -301,11 +342,7 @@ def setup_scheduler(config_id, mcp_api_key):
         config_id: 987654321
         mcp_api_key: "your_mcp_key_here"
 
-    3. Activate scheduler for GitHub issues:
-        config_id: 456789123
-        mcp_api_key: "your_mcp_key_here"
-
-    NOTE: The config_id must be obtained from a successful validate_api_call() response.
+    NOTE: The config_id must be obtained from a successful validate_api_configuration() response.
     The mcp_api_key must match the one used during validation.
 
     Returns:
@@ -330,10 +367,11 @@ def setup_scheduler(config_id, mcp_api_key):
         "config_id": config_id,
     }
 
+
 ## testing
 if __name__ == "__main__":
     # Example usage
-    response = validate_api_call(
+    response = validate_api_configuration(
         mcp_api_key="your_api_key",
         name="Dog Facts API",
         description="Monitor random dog facts from a free API",
@@ -345,6 +383,6 @@ if __name__ == "__main__":
         additional_params="{}",
         schedule_interval_minutes=20,
         stop_after_hours=24,
-        start_time="",
+        time_to_start="",
     )
     print(response)
