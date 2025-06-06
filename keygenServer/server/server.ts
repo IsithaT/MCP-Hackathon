@@ -42,7 +42,7 @@ app.get('/api/public', cors(openCorsOptions), (req, res) => {
 });
 
 // Protected route with strict CORS and authentication
-app.get('/api/protected', 
+app.post('/api/addKey', 
     cors(strictCorsOptions),
     (req, res) => {
         res.json({ message: 'Access granted to protected route' });

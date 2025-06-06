@@ -37,3 +37,4 @@ yarn-error.log*
 # OS specific
 .DS_Store
 Thumbs.db
+/server/generated/prisma
