@@ -259,9 +259,9 @@ def validate_api_configuration(
                 """
                 INSERT INTO api_configurations (
                 config_id, mcp_api_key, name, description, method,
-                base_url, endpoint, params, headers, additional_params,
-                is_validated, is_active, stop_at, schedule_interval_minutes,
-                time_to_start, created_at, validated_at
+                base_url, endpoint, params, headers, additional_params, 
+                is_active, stop_at, schedule_interval_minutes,
+                time_to_start, created_at
                 ) VALUES (
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                 %s, %s, %s, %s, %s, %s, %s
@@ -279,12 +279,10 @@ def validate_api_configuration(
                     json.dumps(api_client.parse_key_value_string(header_keys_values)),
                     additional_params,
                     False,
-                    False,
                     stop_at.isoformat(),
                     schedule_interval_minutes,
                     parsed_start_time,
                     created_at,
-                    None,
                 ),
             )
 
