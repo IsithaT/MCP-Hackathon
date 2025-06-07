@@ -1,6 +1,10 @@
 import gradio as gr
 from api_client import call_api
-from api_monitor import validate_api_configuration, activate_monitoring
+from api_monitor import (
+    validate_api_configuration,
+    activate_monitoring,
+    retrieve_monitored_data,
+)
 import json
 
 
@@ -125,10 +129,42 @@ scheduler_tab = gr.Interface(
     ],
 )
 
+# Retrieve Data Tab
+retrieve_tab = gr.Interface(
+    fn=retrieve_monitored_data,
+    inputs=[
+        gr.Number(label="Config ID", value=None),
+        gr.Textbox(
+            label="MCP API Key", placeholder="Enter your MCP API key", type="password"
+        ),
+        gr.Dropdown(
+            choices=["summary", "details", "full"],
+            label="Data Mode",
+            value="summary",
+            info="summary: LLM-optimized | details: full responses, minimal metadata | full: everything",
+        ),
+    ],
+    outputs=gr.JSON(label="Monitoring Progress & Data"),
+    title="Retrieve Monitoring Data",
+    description="STEP 3: Check the progress and retrieve data from your active monitoring configurations. Use the Config ID from the validation step. Three modes: 'summary' (LLM-optimized), 'details' (full responses), 'full' (complete debug info).",
+    flagging_mode="manual",
+    flagging_options=[
+        "Config Not Found",
+        "Invalid API Key",
+        "No Data Available",
+        "Other",
+    ],
+    examples=[
+        [123456789, "test_mcp_key_123", "summary"],
+        [987654321, "test_mcp_key_456", "details"],
+        [456789123, "test_mcp_key_789", "full"],
+    ],
+)
+
 # Create tabbed interface
 demo = gr.TabbedInterface(
-    [validation_tab, scheduler_tab],
-    ["Validate & Store", "Activate Scheduler"],
+    [validation_tab, scheduler_tab, retrieve_tab],
+    ["Validate & Store", "Activate Scheduler", "Retrieve Data"],
     title="MCP API Monitoring System",
 )
 
