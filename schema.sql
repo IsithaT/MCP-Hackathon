@@ -14,7 +14,7 @@ CREATE TABLE api_configurations (
     headers JSONB,
     additional_params JSONB,
     is_active BOOLEAN DEFAULT FALSE,
-    schedule_interval_minutes INTEGER,
+    schedule_interval_minutes DECIMAL(10,2),
     start_at TIMESTAMP,
     stop_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

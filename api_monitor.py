@@ -153,12 +153,12 @@ def validate_api_configuration(
 
         if (
             not isinstance(schedule_interval_minutes, (int, float))
-            or schedule_interval_minutes < 1
+            or schedule_interval_minutes <= 0
             or schedule_interval_minutes > 1440
         ):
             return {
                 "success": False,
-                "message": "Schedule interval must be between 1 and 1440 minutes",
+                "message": "Schedule interval must be between 0 and 1440 minutes",
                 "config_id": None,
             }
 
@@ -218,7 +218,7 @@ def validate_api_configuration(
 
         # Calculate timestamps
         created_at = datetime.now()
-        stop_at = parsed_start_time + timedelta(hours=stop_after_hours)
+        stop_at = parsed_start_time + timedelta(hours=float(stop_after_hours))
 
         # Store configuration
         try:
@@ -248,7 +248,7 @@ def validate_api_configuration(
                     json.dumps(api_client.parse_key_value_string(header_keys_values)),
                     additional_params,
                     False,
-                    schedule_interval_minutes,
+                    float(schedule_interval_minutes),
                     parsed_start_time,
                     stop_at.isoformat(),
                     created_at,
@@ -343,7 +343,6 @@ def activate_monitoring(config_id, mcp_api_key):
     """
     try:
         conn = connect_to_db()
-        # TODO: Implement activation logic here
         conn.close()
 
         return {
@@ -517,7 +516,7 @@ def retrieve_monitored_data(config_id, mcp_api_key, mode="summary"):
             elapsed_minutes = (now - start_dt).total_seconds() / 60
             if elapsed_minutes > 0:
                 total_expected_calls = max(
-                    1, int(elapsed_minutes / config["schedule_interval_minutes"])
+                    1, int(elapsed_minutes / float(config["schedule_interval_minutes"]))
                 )
 
         # Get success/failure counts
@@ -668,7 +667,7 @@ if __name__ == "__main__":
         param_keys_values="",
         header_keys_values="",
         additional_params="{}",
-        schedule_interval_minutes=20,
+        schedule_interval_minutes=20.5,
         stop_after_hours=24,
         start_at="",
     )
