@@ -84,7 +84,7 @@ export default function MainPage() {
                 Welcome back, {userDisplayName}!
               </h1>
               <p className="text-sm md:text-base text-secondary">
-                Generate your MCP API key for monitoring external APIs
+                Generate your MCP API key for monitoring APIs
               </p>
             </div>            <button
               onClick={() => auth.signOut().then(() => router.push('/'))}
@@ -130,7 +130,7 @@ export default function MainPage() {
                     </code>
                   </div>
                   <p className="text-xs text-secondary mt-2">
-                    Keep this MCP API key secure - use it for monitoring external APIs
+                    Keep this key secure
                   </p>
                 </div>
               )}              {error && (
@@ -174,15 +174,15 @@ export default function MainPage() {
               <div className="space-y-3 text-sm text-secondary">
                 <div className="flex items-start space-x-3">
                   <span className="flex-shrink-0 w-5 h-5 bg-slate-600 text-white rounded-full flex items-center justify-center text-xs font-semibold">1</span>
-                  <p>Use this key with the MCP API monitoring system to track external APIs</p>
+                  <p>Use this key with the MCP API monitoring system to track APIs</p>
                 </div>
                 <div className="flex items-start space-x-3">
                   <span className="flex-shrink-0 w-5 h-5 bg-slate-600 text-white rounded-full flex items-center justify-center text-xs font-semibold">2</span>
-                  <p>Set up API monitoring rules for automated external API calls</p>
+                  <p>Set up API monitoring rules for automated API calls</p>
                 </div>
                 <div className="flex items-start space-x-3">
                   <span className="flex-shrink-0 w-5 h-5 bg-slate-600 text-white rounded-full flex items-center justify-center text-xs font-semibold">3</span>
-                  <p>Monitor API responses and receive alerts when external services change</p>
+                  <p>Monitor API responses and receive alerts when services change</p>
                 </div>
               </div>
             </div>
