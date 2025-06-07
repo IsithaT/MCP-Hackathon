@@ -6,13 +6,11 @@ import psycopg2
 import psycopg2.extras
 import os
 from dotenv import load_dotenv
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.triggers.interval import IntervalTrigger
-from apscheduler.triggers.date import DateTrigger
 import time
 import threading
 import asyncio
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
 
 # Load environment variables from .env file
 load_dotenv(override=True)
