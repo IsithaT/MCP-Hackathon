@@ -26,9 +26,7 @@ def connect_to_db():
         port=6543,
         database="postgres",
         user="postgres.rivuplskngyevyzlshuh",
-        host="aws-0-us-west-1.pooler.supabase.com",
         password=db_password,
-        port=6543,
         cursor_factory=psycopg2.extras.DictCursor,
     )
 
@@ -45,7 +43,7 @@ def validate_api_configuration(
     additional_params,
     schedule_interval_minutes,
     stop_after_hours,
-    time_to_start,
+    start_at,
 ):
     """
     TOOL: Validate and store API configuration for monitoring.
@@ -76,7 +74,7 @@ def validate_api_configuration(
     - additional_params: Optional JSON string for complex parameters
     - schedule_interval_minutes: Minutes between calls
     - stop_after_hours: Hours after which to stop (max 168 = 1 week)
-    - time_to_start: When to start the monitoring (datetime string or None for immediate)
+    - start_at: When to start the monitoring (datetime string or None for immediate)
 
     Input Examples:
 
@@ -92,7 +90,7 @@ def validate_api_configuration(
         additional_params: "{}"
         schedule_interval_minutes: 30
         stop_after_hours: 24
-        time_to_start: ""
+        start_at: ""
 
     2. API with complex parameters:
         mcp_api_key: "your_mcp_key_here"
@@ -106,7 +104,7 @@ def validate_api_configuration(
         additional_params: '{"severity": ["severe", "extreme"], "types": ["tornado", "hurricane"]}'
         schedule_interval_minutes: 15
         stop_after_hours: 48
-        time_to_start: "2024-06-15 09:00:00"
+        start_at: "2024-06-15 09:00:00"
 
     Returns:
     - Dictionary with success status, config_id (needed for setup_scheduler), message, and sample_response
@@ -175,11 +173,11 @@ def validate_api_configuration(
                 "config_id": None,
             }
 
-        # Validate time_to_start if provided
-        if time_to_start:
+        # Validate start_at if provided
+        if start_at:
             try:
                 parsed_start_time = datetime.fromisoformat(
-                    time_to_start.replace("Z", "+00:00")
+                    start_at.replace("Z", "+00:00")
                 )
                 if parsed_start_time < datetime.now():
                     return {
@@ -212,43 +210,15 @@ def validate_api_configuration(
                 "config_id": None,
             }
 
-        # Generate config ID and calculate timestamps
-        config_data = {
-            "mcp_api_key": mcp_api_key,
-            "name": name,
-            "description": description,
-            "method": method,
-            "base_url": base_url,
-            "endpoint": endpoint,
-            "param_keys_values": param_keys_values,
-            "header_keys_values": header_keys_values,
-            "additional_params": additional_params,
-            "schedule_interval_minutes": schedule_interval_minutes,
-            "stop_after_hours": stop_after_hours,
-        }
-
-        # Generate unique config ID
-        config_str = json.dumps(config_data, sort_keys=True) + str(
-            datetime.now().timestamp()
+        # Generate unique config ID and calculate timestamps
+        config_str = (
+            f"{mcp_api_key}_{name}_{base_url}_{endpoint}_{datetime.now().timestamp()}"
         )
         config_id = int(hashlib.md5(config_str.encode()).hexdigest()[:7], 16)
 
         # Calculate timestamps
         created_at = datetime.now()
         stop_at = parsed_start_time + timedelta(hours=stop_after_hours)
-
-        # Add metadata to config
-        config_data.update(
-            {
-                "config_id": config_id,
-                "created_at": created_at.isoformat(),
-                "start_at": parsed_start_time.isoformat(),
-                "stop_at": stop_at.isoformat(),
-                # @JamezyKim This will be used to track the status of whether the api is confirmed or not
-                "is_validated": False,
-                "api_response": result,
-            }
-        )
 
         # Store configuration
         try:
@@ -259,12 +229,11 @@ def validate_api_configuration(
                 """
                 INSERT INTO api_configurations (
                 config_id, mcp_api_key, name, description, method,
-                base_url, endpoint, params, headers, additional_params, 
-                is_active, stop_at, schedule_interval_minutes,
-                time_to_start, created_at
+                base_url, endpoint, params, headers, additional_params,
+                is_active, schedule_interval_minutes, start_at, stop_at, created_at
                 ) VALUES (
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s
                 )
                 """,
                 (
@@ -279,9 +248,9 @@ def validate_api_configuration(
                     json.dumps(api_client.parse_key_value_string(header_keys_values)),
                     additional_params,
                     False,
-                    stop_at.isoformat(),
                     schedule_interval_minutes,
                     parsed_start_time,
+                    stop_at.isoformat(),
                     created_at,
                 ),
             )
@@ -306,7 +275,7 @@ def validate_api_configuration(
         return {
             "success": True,
             "config_id": config_id,
-            "message": f"API call tested and stored successfully for '{name}'. Use this config_id in activate_monitoring() to activate monitoring.",
+            "message": f"API call tested, validated, and stored successfully for '{name}'. Make sure to review the message manually before activating monitoring. Use this config_id in activate_monitoring() to activate monitoring.",
             "sample_response": (
                 json.loads(result)
                 if result.startswith("{") or result.startswith("[")
@@ -524,26 +493,22 @@ def retrieve_monitored_data(config_id, mcp_api_key, mode="summary"):
 
         # Check if monitoring is finished
         now = datetime.now()
-        stop_time = config.get("time_to_start")
-        if stop_time and config.get("schedule_interval_minutes"):
-            # Calculate when monitoring should stop
-            stop_after_hours = (
-                config.get("schedule_interval_minutes", 24) / 60 * 24
-            )  # Default fallback
-            if hasattr(stop_time, "replace"):
-                stop_at = stop_time + timedelta(hours=stop_after_hours)
+        stop_at_time = config.get("stop_at")
+        if stop_at_time:
+            if hasattr(stop_at_time, "replace"):
+                stop_at = stop_at_time
             else:
-                stop_at = datetime.fromisoformat(str(stop_time)) + timedelta(
-                    hours=stop_after_hours
+                stop_at = datetime.fromisoformat(
+                    str(stop_at_time).replace("Z", "+00:00")
                 )
-            is_finished = now > stop_at or config.get("stop", False)
+            is_finished = now > stop_at
         else:
-            is_finished = config.get("stop", False)
+            is_finished = False
 
         # Calculate progress statistics
         total_expected_calls = 0
-        if config.get("time_to_start") and config.get("schedule_interval_minutes"):
-            start_time = config["time_to_start"]
+        if config.get("start_at") and config.get("schedule_interval_minutes"):
+            start_time = config["start_at"]
             if hasattr(start_time, "replace"):
                 start_dt = start_time
             else:
@@ -609,12 +574,16 @@ def retrieve_monitored_data(config_id, mcp_api_key, mode="summary"):
                 },
                 "schedule_info": {
                     "interval_minutes": config.get("schedule_interval_minutes"),
-                    "started_at": (
-                        config.get("time_to_start").isoformat()
-                        if config.get("time_to_start")
+                    "start_at": (
+                        config.get("start_at").isoformat()
+                        if config.get("start_at")
                         else None
                     ),
-                    "is_stopped": config.get("stop", False),
+                    "stop_at": (
+                        config.get("stop_at").isoformat()
+                        if config.get("stop_at")
+                        else None
+                    ),
                 },
                 "data": monitored_data,
             }
@@ -701,7 +670,7 @@ if __name__ == "__main__":
         additional_params="{}",
         schedule_interval_minutes=20,
         stop_after_hours=24,
-        time_to_start="",
+        start_at="",
     )
     print(validation_response)
     print()

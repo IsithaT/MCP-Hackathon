@@ -3,7 +3,7 @@ DROP TABLE IF EXISTS api_configurations;
 
 CREATE TABLE api_configurations (
     id SERIAL PRIMARY KEY,
-	config_id INTEGER NOT NULL UNIQUE,
+    config_id INTEGER NOT NULL UNIQUE,
     mcp_api_key VARCHAR(255) NOT NULL,
     name VARCHAR(255) NOT NULL,
     description TEXT,
@@ -14,9 +14,9 @@ CREATE TABLE api_configurations (
     headers JSONB,
     additional_params JSONB,
     is_active BOOLEAN DEFAULT FALSE,
-    stop_at TIMESTAMP,
     schedule_interval_minutes INTEGER,
-	time_to_start TIMESTAMP,
+    start_at TIMESTAMP,
+    stop_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -32,7 +32,7 @@ CREATE TABLE api_call_results (
 INSERT INTO api_configurations (
     config_id, mcp_api_key, name, description, method, base_url, endpoint,
     params, headers, additional_params,
-    is_active, stop_at, schedule_interval_minutes
+    is_active, schedule_interval_minutes, start_at, stop_at
 ) VALUES (
 	10101,
     'abc123xyz',            
@@ -45,8 +45,9 @@ INSERT INTO api_configurations (
     '{"Authorization":"Bearer token"}', 
     '{}',                               
     TRUE,                              
-    '2025-06-06',                             
-    20                                
+    20,
+    '2025-06-04T12:00:00',
+    '2025-06-11T12:00:00'
 );
 
 INSERT INTO api_call_results (
