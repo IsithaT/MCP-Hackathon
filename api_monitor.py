@@ -378,10 +378,22 @@ def activate_monitoring(config_id, mcp_api_key):
 
     ERROR HANDLING: If config_id not found or invalid, returns success=False with error message
     """
+
+    """
     try:
         conn = connect_to_db()
         # TODO: Implement activation logic here
+        #problem is that we probably want activation to be completely separate from everything
         conn.close()
+
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"Database connection failed: {str(e)}",
+            "config_id": config_id,
+        }
+    """
+
     #get config from database
 
 
@@ -431,14 +443,7 @@ def activate_monitoring(config_id, mcp_api_key):
             "message": f"Failed to create scheduler: {str(e)}",
             "config_id": config_id,
         }
-
-    
-    # if we get down here something is horribly wrong, we should never get here
-        return {
-            "success": False,
-            "message": "SOMETHING WENT HORRIBLY WRONG, THIS SHOULD NEVER HAPPEN",
-            "config_id": config_id,
-        }
+    # if we get down here something is horribly wrong, we should never get her
     except Exception as e:
         return {
             "success": False,
