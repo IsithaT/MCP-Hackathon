@@ -23,9 +23,9 @@ def connect_to_db():
         )
 
     return psycopg2.connect(
-        database="testdb",
+        database="postgres",
         user="postgres",
-        host="localhost",
+        host="db.rivuplskngyevyzlshuh.supabase.co",
         password=db_password,
         port=5432,
         cursor_factory=psycopg2.extras.DictCursor,
