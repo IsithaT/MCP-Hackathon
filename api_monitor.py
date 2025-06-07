@@ -24,10 +24,10 @@ def connect_to_db():
 
     return psycopg2.connect(
         database="postgres",
-        user="postgres",
-        host="db.rivuplskngyevyzlshuh.supabase.co",
+        user="postgres.rivuplskngyevyzlshuh",
+        host="aws-0-us-west-1.pooler.supabase.com",
         password=db_password,
-        port=5432,
+        port=6543,
         cursor_factory=psycopg2.extras.DictCursor,
     )
 
