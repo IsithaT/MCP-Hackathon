@@ -402,7 +402,6 @@ def activate_monitoring(config_id, mcp_api_key):
             start_delay_sec=1,  # Use the time_to_start if provided
             interval_sec=3,  # Convert schedule_interval_minutes to seconds
             duration_hours=0.015,  # Use stop_after_hours if provided
-            config_id=config_id,  # Pass the config_id for tracking
         )
 
         
@@ -432,20 +431,19 @@ def make_data_generator(tag):
         i += 1
 
 # 🧱 Function that runs inside each thread
-def schedule_runner(tag, start_delay_sec, interval_sec, duration_hours,config_id):
+def schedule_runner(tag, start_delay_sec, interval_sec, duration_hours):
     scheduler = BackgroundScheduler()
     start_time = datetime.now() + timedelta(seconds=start_delay_sec)
     end_time = start_time + timedelta(hours=duration_hours)
     generator = make_data_generator(tag)
 
     # The actual job to be scheduled
-    def job_func(config_id):
+    def job_func():
         value = next(generator)
         print(f"[{tag}] 🔄 Job ran with: {value} at {datetime.now()}")
         yield {
         "success": True,
-        "message": f"[{tag}] 🔄 Job ran with: {value} at {datetime.now()}",
-        "config_id": config_id}
+        "message": f"[{tag}] 🔄 Job ran with: {value} at {datetime.now()}"}
         
 
     # Graceful shutdown job
@@ -455,7 +453,7 @@ def schedule_runner(tag, start_delay_sec, interval_sec, duration_hours,config_id
 
     # Add the jobs
     scheduler.add_job(
-        job_func(config_id),
+        job_func,
         trigger=IntervalTrigger(start_date=start_time, seconds=interval_sec, end_date=end_time)
     )
     scheduler.add_job(
@@ -473,10 +471,10 @@ def schedule_runner(tag, start_delay_sec, interval_sec, duration_hours,config_id
     print(f"[{tag}] ✅ Scheduler completed.")
 
 # 🧵 Thread spawner
-def create_schedule_thread(tag, start_delay_sec, interval_sec, duration_hours,config_id):
+def create_schedule_thread(tag, start_delay_sec, interval_sec, duration_hours):
     thread = threading.Thread(
         target=schedule_runner,
-        args=(tag, start_delay_sec, interval_sec, duration_hours,config_id),
+        args=(tag, start_delay_sec, interval_sec, duration_hours),
         daemon=True  # Automatically closes with main program
     )
     thread.start()
