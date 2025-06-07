@@ -394,7 +394,7 @@ async def activate_monitoring(config_id, mcp_api_key):
             }
         # Extract scheduling parameters
         name = config.get("name", "Unknown")
-        schedule_interval_minutes = config.get("schedule_interval_minutes", 20)
+        schedule_interval_minutes = float(config.get("schedule_interval_minutes", 20))
         stop_at = config.get("stop_at")
         start_at = config.get("time_to_start")
         if not start_at:
@@ -411,6 +411,44 @@ async def activate_monitoring(config_id, mcp_api_key):
         def dummy_job():
             now = datetime.now()
             next_call = now + timedelta(minutes=schedule_interval_minutes)
+            print(f"Executing job for {name} at {now.isoformat()}. Next call at {next_call.isoformat()}")
+            try:
+                job_conn = connect_to_db()
+                job_cur = job_conn.cursor()
+                # Mark config as active (only once, on first run)
+                job_cur.execute(
+                    """
+                    UPDATE api_configurations SET is_active = %s WHERE config_id = %s
+                    """,
+                    (True, config_id)
+                )
+                # Insert a dummy result into api_call_results
+                job_cur.execute(
+                    """
+                    INSERT INTO api_call_results (
+                        config_id, response_data, is_successful, error_message, called_at
+                    ) VALUES (%s, %s, %s, %s, %s)
+                    """,
+                    (
+                        config_id,
+                        json.dumps({
+                            "success": True,
+                            "message": f"Scheduler activated for '{name}'",
+                            "config_id": config_id,
+                            "schedule_interval_minutes": schedule_interval_minutes,
+                            "stop_at": stop_at.isoformat(),
+                            "next_call_at": next_call.isoformat(),
+                        }),
+                        True,
+                        None,
+                        now,
+                    )
+                )
+                job_conn.commit()
+                job_cur.close()
+                job_conn.close()
+            except Exception as job_exc:
+                print(f"Dummy job DB error: {job_exc}")
             return {
                 "success": True,
                 "message": f"Scheduler activated for '{name}'",
