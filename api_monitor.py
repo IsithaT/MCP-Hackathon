@@ -11,6 +11,8 @@ from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.date import DateTrigger
 import time
 import threading
+import asyncio
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 # Load environment variables from .env file
 load_dotenv()
@@ -331,7 +333,7 @@ def validate_api_configuration(
         }
 
 
-def activate_monitoring(config_id, mcp_api_key):
+async def activate_monitoring(config_id, mcp_api_key):
     """
     TOOL: Activate periodic monitoring for a validated API configuration.
 
@@ -379,26 +381,6 @@ def activate_monitoring(config_id, mcp_api_key):
     ERROR HANDLING: If config_id not found or invalid, returns success=False with error message
     """
 
-    """
-    try:
-        conn = connect_to_db()
-        # TODO: Implement activation logic here
-        #problem is that we probably want activation to be completely separate from everything
-        conn.close()
-
-    except Exception as e:
-        return {
-            "success": False,
-            "message": f"Database connection failed: {str(e)}",
-            "config_id": config_id,
-        }
-    """
-
-    #get config from database
-
-
-    #check if config_id is valid!
-
     #need to extract 
     '''
     mcp_api_key,
@@ -419,35 +401,81 @@ def activate_monitoring(config_id, mcp_api_key):
     # using time_to_start, schedule_interval_minutes, and stop_after_hours
     #label using name and description
     
-   
-    
-    
 
 
     #attempt to create the scheduler
     try:
-        create_schedule_thread(
-            tag = "defualt tag",  # this is not a function
-            start_delay_sec=1,  # Use the time_to_start if provided
-            interval_sec=3,  # Convert schedule_interval_minutes to seconds
-            duration_hours=0.015,  # Use stop_after_hours if provided
+        conn = connect_to_db()
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM api_configurations WHERE config_id = %s", (config_id,))
+        config_row = cur.fetchone()
+        if not config_row:
+            conn.close()
+            return {
+                "success": False,
+                "message": "Invalid config_id",
+                "config_id": config_id,
+            }
+        config = dict(config_row)
+        if config["mcp_api_key"] != mcp_api_key:
+            conn.close()
+            return {
+                "success": False,
+                "message": "Invalid mcp_api_key. You are not authorized to activate this configuration.",
+                "config_id": config_id,
+            }
+        # Extract scheduling parameters
+        name = config.get("name", "Unknown")
+        schedule_interval_minutes = config.get("schedule_interval_minutes", 20)
+        stop_at = config.get("stop_at")
+        start_at = config.get("time_to_start")
+        if not start_at:
+            start_at = datetime.now()
+        else:
+            if not isinstance(start_at, datetime):
+                start_at = datetime.fromisoformat(str(start_at))
+        if not stop_at:
+            stop_at = start_at + timedelta(hours=config.get("stop_after_hours", 24))
+        else:
+            if not isinstance(stop_at, datetime):
+                stop_at = datetime.fromisoformat(str(stop_at))
+        # Dummy function to be scheduled
+        def dummy_job():
+            now = datetime.now()
+            next_call = now + timedelta(minutes=schedule_interval_minutes)
+            return {
+                "success": True,
+                "message": f"Scheduler activated for '{name}'",
+                "config_id": config_id,
+                "schedule_interval_minutes": schedule_interval_minutes,
+                "stop_at": stop_at.isoformat(),
+                "next_call_at": next_call.isoformat(),
+            }
+        # Setup AsyncIO scheduler
+        scheduler = AsyncIOScheduler()
+        # Schedule the dummy job
+        scheduler.add_job(
+            dummy_job,
+            'interval',
+            minutes=schedule_interval_minutes,
+            start_date=start_at,
+            end_date=stop_at,
+            id=f"monitor_{config_id}"
         )
-
-        
-
-
-
+        scheduler.start()
+        conn.close()
+        return {
+            "success": True,
+            "message": f"Scheduler activated for '{name}'",
+            "config_id": config_id,
+            "schedule_interval_minutes": schedule_interval_minutes,
+            "stop_at": stop_at.isoformat(),
+            "next_call_at": (start_at + timedelta(minutes=schedule_interval_minutes)).isoformat(),
+        }
     except Exception as e:
         return {
             "success": False,
             "message": f"Failed to create scheduler: {str(e)}",
-            "config_id": config_id,
-        }
-    # if we get down here something is horribly wrong, we should never get her
-    except Exception as e:
-        return {
-            "success": False,
-            "message": f"Database connection failed: {str(e)}",
             "config_id": config_id,
         }
 
@@ -748,65 +776,6 @@ def retrieve_monitored_data(config_id, mcp_api_key, mode="summary"):
             "data": [],
         }
 
-# 🔁 Create a new generator per schedule
-def make_data_generator(tag):
-    i = 0
-    while True:
-        yield f"{tag}-{i}"
-        i += 1
-
-# 🧱 Function that runs inside each thread
-def schedule_runner(tag, start_delay_sec, interval_sec, duration_hours):
-    scheduler = BackgroundScheduler()
-    start_time = datetime.now() + timedelta(seconds=start_delay_sec)
-    end_time = start_time + timedelta(hours=duration_hours)
-    generator = make_data_generator(tag)
-
-    # The actual job to be scheduled
-    def job_func():
-        value = next(generator)
-        print(f"[{tag}] 🔄 Job ran with: {value} at {datetime.now()}")
-        yield {
-        "success": True,
-        "message": f"[{tag}] 🔄 Job ran with: {value} at {datetime.now()}"}
-        
-
-    # Graceful shutdown job
-    def shutdown_func():
-        print(f"[{tag}] ⛔ Scheduler shutting down at {datetime.now()}")
-        scheduler.shutdown()
-
-    # Add the jobs
-    scheduler.add_job(
-        job_func,
-        trigger=IntervalTrigger(start_date=start_time, seconds=interval_sec, end_date=end_time)
-    )
-    scheduler.add_job(
-        shutdown_func,
-        trigger=DateTrigger(run_date=end_time)
-    )
-
-    scheduler.start()
-    print(f"[{tag}] 🕒 Scheduler running from {start_time} to {end_time}, every {interval_sec}s.")
-
-    # Keep thread alive while scheduler is running
-    while scheduler.running:
-        time.sleep(1)
-
-    print(f"[{tag}] ✅ Scheduler completed.")
-
-# 🧵 Thread spawner
-def create_schedule_thread(tag, start_delay_sec, interval_sec, duration_hours):
-    thread = threading.Thread(
-        target=schedule_runner,
-        args=(tag, start_delay_sec, interval_sec, duration_hours),
-        daemon=True  # Automatically closes with main program
-    )
-    thread.start()
-    return thread
-
-
-
 ## testing
 if __name__ == "__main__":
     validation_response = validate_api_configuration(
@@ -841,4 +810,4 @@ if __name__ == "__main__":
     )
     print(json.dumps(response, indent=2, default=str))
 
-    
+
