@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { auth } from '@/lib/firebase';
+import { auth } from '@/libs/firebase';
 import { useRouter } from 'next/navigation';
 
 export default function MainPage() {
