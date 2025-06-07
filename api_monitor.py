@@ -8,7 +8,7 @@ import os
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
-load_dotenv()
+load_dotenv(override=True)
 
 
 def connect_to_db():
@@ -21,14 +21,12 @@ def connect_to_db():
         raise ValueError(
             "Database password not found in environment variables. Please set DB_PASSWORD."
         )
-
     return psycopg2.connect(
+        host="aws-0-us-west-1.pooler.supabase.com",
+        port=6543,
         database="postgres",
-        user="postgres",
-        host="db.rivuplskngyevyzlshuh.supabase.co",
-        password=db_password,
-        port=5432,
-        cursor_factory=psycopg2.extras.DictCursor,
+        user="postgres.rivuplskngyevyzlshuh",
+        password=db_password
     )
 
 
