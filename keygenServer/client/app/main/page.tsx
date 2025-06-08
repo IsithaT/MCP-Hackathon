@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
+
 export default function MainPage() {
   const [loading, setLoading] = useState(true);
   const [userEmail, setUserEmail] = useState('');
@@ -9,17 +10,24 @@ export default function MainPage() {
   const [apiKey, setApiKey] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
+
   useEffect(() => {
-    const unsub = auth.onAuthStateChanged((user) => {
-      if (!user) {
-        router.push('/');
-      } else {
-        setUserEmail(user.email || 'Unknown user');
-        setUserDisplayName(user.displayName || 'Unknown user');
-        setLoading(false);
-      }
+    let unsub: (() => void) | undefined;
+    // Dynamically import firebase only on client
+    import('@/libs/firebase').then(({ auth }) => {
+      unsub = auth.onAuthStateChanged((user) => {
+        if (!user) {
+          router.push('/');
+        } else {
+          setUserEmail(user.email || 'Unknown user');
+          setUserDisplayName(user.displayName || 'Unknown user');
+          setLoading(false);
+        }
+      });
     });
-    return () => unsub();
+    return () => {
+      if (unsub) unsub();
+    };
   }, [router]);
 
   const handleSignOut = async () => {

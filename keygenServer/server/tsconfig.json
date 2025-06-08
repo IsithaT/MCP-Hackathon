@@ -3,12 +3,21 @@
     "target": "es2017",
     "module": "commonjs",
     "outDir": "./dist",
-  "rootDir": "./", 
-  "strict": true,
-  "esModuleInterop": true,
-  "skipLibCheck": true,
-  "forceConsistentCasingInFileNames": true
+    "rootDir": ".",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "sourceMap": true
   },
-  "include": ["**/*"],
-  "exclude": ["dist"]
+  "include": [
+    "*.ts",
+    "**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }
