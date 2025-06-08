@@ -689,34 +689,35 @@ def retrieve_monitored_data(config_id, mcp_api_key, mode="summary"):
 
 ## testing
 if __name__ == "__main__":
-    validation_response = validate_api_configuration(
-        mcp_api_key="your_api_key",
-        name="Dog Facts API",
-        description="Monitor random dog facts from a free API",
-        method="GET",
-        base_url="https://dogapi.dog",
-        endpoint="api/v2/facts",
-        param_keys_values="",
-        header_keys_values="",
-        additional_params="{}",
-        schedule_interval_minutes=20,
-        stop_after_hours=24,
-        start_at="",
-    )
-    print(validation_response)
-    print()
-    print()
+    cleanup_old_configurations()
+    # validation_response = validate_api_configuration(
+    #     mcp_api_key="your_api_key",
+    #     name="Dog Facts API",
+    #     description="Monitor random dog facts from a free API",
+    #     method="GET",
+    #     base_url="https://dogapi.dog",
+    #     endpoint="api/v2/facts",
+    #     param_keys_values="",
+    #     header_keys_values="",
+    #     additional_params="{}",
+    #     schedule_interval_minutes=20,
+    #     stop_after_hours=24,
+    #     start_at="",
+    # )
+    # print(validation_response)
+    # print()
+    # print()
 
-    activate_monitoring_response = activate_monitoring(
-        config_id=validation_response.get("config_id"),
-        mcp_api_key="your_api_key",
-    )
-    print(activate_monitoring_response)
-    print()
-    print()
+    # activate_monitoring_response = activate_monitoring(
+    #     config_id=validation_response.get("config_id"),
+    #     mcp_api_key="your_api_key",
+    # )
+    # print(activate_monitoring_response)
+    # print()
+    # print()
 
-    response = retrieve_monitored_data(
-        config_id=activate_monitoring_response.get("config_id"),
-        mcp_api_key="your_api_key",
-    )
-    print(json.dumps(response, indent=2, default=str))
+    # response = retrieve_monitored_data(
+    #     config_id=activate_monitoring_response.get("config_id"),
+    #     mcp_api_key="your_api_key",
+    # )
+    # print(json.dumps(response, indent=2, default=str))
