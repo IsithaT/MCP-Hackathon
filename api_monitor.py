@@ -31,6 +31,37 @@ def connect_to_db():
     )
 
 
+def cleanup_old_configurations():
+    cleanup_situations = [
+        """
+        DELETE FROM api_configurations
+        WHERE stop_at IS NOT NULL
+            AND stop_at < NOW() - INTERVAL '14 days';
+        """,
+    ]
+
+    conn = None
+    try:
+        conn = connect_to_db()
+        with conn.cursor() as cur:
+            for raw_sql in cleanup_situations:
+                sql = raw_sql.strip()
+                if not sql:
+                    continue
+
+                cur.execute(sql)
+                deleted = cur.rowcount
+                print(f"[CLEANUP] {deleted} rows deleted.")
+        conn.commit()
+
+    except Exception as e:
+        print(f"[ERROR] cleanup failed: {e}")
+
+    finally:
+        if conn:
+            conn.close()
+
+
 def validate_api_configuration(
     mcp_api_key,
     name,
