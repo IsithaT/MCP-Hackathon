@@ -101,6 +101,10 @@ def validate_api_configuration(
     before proceeding to activate_monitoring(). The API call may return success=True but contain
     error messages (like "401 Unauthorized", "Invalid API key", etc.) in the sample_response.
 
+    CRITICAL: Always try to add parameters that will limit the API response to a manageable size.
+
+    CRITICAL: Be sure to always clearly inform the user of the config_id after a desired validation result.
+
     WORKFLOW:
     1. Call this function to validate API configuration
     2. If success=False: Fix parameters and retry this function
@@ -120,7 +124,9 @@ def validate_api_configuration(
     - additional_params: Optional JSON string for complex parameters
     - schedule_interval_minutes: Minutes between calls
     - stop_after_hours: Hours after which to stop (supports decimals, max 168 = 1 week)
-    - start_at: Optional datetime string for when to start the monitoring. IMPORTANT: Leave as empty string "" for immediate start (most common use case, always default to this if no start time provided). Only provide a datetime string (e.g., "2024-06-15 09:00:00") if you need to schedule monitoring for a specific future time.
+    - start_at: Optional datetime string for when to start the monitoring.
+
+    IMPORTANT: Leave as empty string "" for immediate start (most common use case, always default to this if no start time provided). Only provide a datetime string (e.g., "2024-06-15 09:00:00") if you need to schedule monitoring for a specific future time.
 
     Input Examples:
 
@@ -138,18 +144,18 @@ def validate_api_configuration(
         stop_after_hours: 1.5
         start_at: ""
 
-    2. API with complex parameters:
+    2. Weather monitoring with free API:
         mcp_api_key: "your_mcp_key_here"
-        name: "Weather Alert Monitor"
-        description: "Monitor severe weather alerts"
-        method: "POST"
-        base_url: "https://api.weather.com"
-        endpoint: "alerts"
-        param_keys_values: "lat: 40.7128\nlon: -74.0060"
-        header_keys_values: "X-API-Key: weather_key\nContent-Type: application/json"
-        additional_params: '{"severity": ["severe", "extreme"], "types": ["tornado", "hurricane"]}'
-        schedule_interval_minutes: 15
-        stop_after_hours: 0.75
+        name: "Weather Monitor"
+        description: "Monitor current weather conditions every 2 hours for one week using Open-Meteo free API"
+        method: "GET"
+        base_url: "https://api.open-meteo.com"
+        endpoint: "v1/forecast"
+        param_keys_values: "latitude: 40.7128\nlongitude: -74.0060\ncurrent: temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m\ntimezone: America/New_York"
+        header_keys_values: "Content-Type: application/json"
+        additional_params: "{}"
+        schedule_interval_minutes: 120
+        stop_after_hours: 168
         start_at: "2024-06-15 09:00:00"
 
     Returns:
@@ -163,7 +169,8 @@ def validate_api_configuration(
         "sample_response": {...},
         "stop_at": "2025-06-11T12:00:00Z",
         "start_at": "2025-06-04T12:00:00Z"
-    }    NEXT STEP: If success=True, call activate_monitoring(config_id, mcp_api_key) to activate monitoring
+    }
+    NEXT STEP: If success=True, call activate_monitoring(config_id, mcp_api_key) to activate monitoring
     """
     try:
         # Validate input parameters
