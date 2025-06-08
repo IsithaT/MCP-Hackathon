@@ -6,6 +6,7 @@ import psycopg2
 import psycopg2.extras
 import os
 from dotenv import load_dotenv
+from apscheduler.schedulers.blocking import BlockingScheduler
 
 # Load environment variables from .env file
 load_dotenv(override=True)
@@ -36,7 +37,7 @@ def cleanup_old_configurations():
         """
         DELETE FROM api_configurations
         WHERE stop_at IS NOT NULL
-            AND stop_at < NOW() - INTERVAL '2 secs';
+            AND stop_at < NOW() - INTERVAL '14 days';
         """,
     ]
 
@@ -60,6 +61,13 @@ def cleanup_old_configurations():
     finally:
         if conn:
             conn.close()
+
+
+def job_schedule():
+    sched = BlockingScheduler()
+    sched.add_job(cleanup_old_configurations, "cron", hour=0, minute=0)
+    print("cleanup job scheduled at 00:00 UTC")
+    sched.start()
 
 
 def validate_api_configuration(
@@ -690,6 +698,8 @@ def retrieve_monitored_data(config_id, mcp_api_key, mode="summary"):
 ## testing
 if __name__ == "__main__":
     cleanup_old_configurations()
+    job_schedule()
+
     # validation_response = validate_api_configuration(
     #     mcp_api_key="your_api_key",
     #     name="Dog Facts API",
