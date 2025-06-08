@@ -25,11 +25,18 @@ def connect_to_db():
         raise ValueError(
             "Database password not found in environment variables. Please set DB_PASSWORD."
         )
+
+    # Get database connection details from environment variables with defaults
+    db_host = os.getenv("DB_HOST")
+    db_port = int(os.getenv("DB_PORT"))
+    db_name = os.getenv("DB_NAME")
+    db_user = os.getenv("DB_USER")
+
     return psycopg2.connect(
-        host="aws-0-us-west-1.pooler.supabase.com",
-        port=6543,
-        database="postgres",
-        user="postgres.rivuplskngyevyzlshuh",
+        host=db_host,
+        port=db_port,
+        database=db_name,
+        user=db_user,
         password=db_password,
         cursor_factory=psycopg2.extras.DictCursor,
     )
