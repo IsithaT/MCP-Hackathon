@@ -13,6 +13,7 @@ const port = process.env.PORT || 3001;
 // Whitelist of allowed client origins
 const allowedOrigins = [
     'http://localhost:3000',
+    'https://mcp-hackathon.vercel.app/',
     'http://your-production-domain.com'
 ];
 

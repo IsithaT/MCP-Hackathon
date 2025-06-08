@@ -38,7 +38,7 @@ export default function MainPage() {
 
   const generateApiKey = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/addKey', {
+      const response = await fetch('https://mcp-hackathon-tu1u.onrender.com/api/addkey', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
