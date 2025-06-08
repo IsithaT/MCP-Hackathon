@@ -36,7 +36,7 @@ def cleanup_old_configurations():
         """
         DELETE FROM api_configurations
         WHERE stop_at IS NOT NULL
-            AND stop_at < NOW() - INTERVAL '14 days';
+            AND stop_at < NOW() - INTERVAL '2 secs';
         """,
     ]
 
