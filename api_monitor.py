@@ -108,7 +108,7 @@ def validate_api_configuration(
     4. If sample_response contains error messages: Fix API parameters and retry validation
     5. If sample_response looks valid: Use config_id in activate_monitoring() to activate monitoring
 
-    Parameters:
+    ARGUMENTS:
     - mcp_api_key: MCP API key serves as user identifier
     - name: User-friendly name for the monitoring task
     - description: Description of what is being monitored
@@ -117,12 +117,14 @@ def validate_api_configuration(
     - endpoint: The specific API endpoint
     - param_keys_values: Parameter key-value pairs, one per line
     - header_keys_values: Header key-value pairs, one per line
-    - additional_params: Optional JSON string for complex parameters    - schedule_interval_minutes: Minutes between calls
-    - stop_after_hours: Hours after which to stop (supports decimals, max 168 = 1 week)    - start_at: Optional datetime string for when to start the monitoring.
-                 IMPORTANT: Leave as empty string "" for immediate start (most common use case).
-                 Only provide a datetime string (e.g., "2024-06-15 09:00:00") if you need to schedule monitoring for a specific future time.
+    - additional_params: Optional JSON string for complex parameters
+    - schedule_interval_minutes: Minutes between calls
+    - stop_after_hours: Hours after which to stop (supports decimals, max 168 = 1 week)
+    - start_at: Optional datetime string for when to start the monitoring. IMPORTANT: Leave as empty string "" for immediate start (most common use case, always default to this if no start time provided). Only provide a datetime string (e.g., "2024-06-15 09:00:00") if you need to schedule monitoring for a specific future time.
 
-    Input Examples:    1. Simple GET request to monitor stock price (IMMEDIATE START - most common):
+    Input Examples:
+
+    1. Simple GET request to monitor stock price:
         mcp_api_key: "your_mcp_key_here"
         name: "NVDA Stock Price"
         description: "Monitor NVIDIA stock price every 30 minutes"
@@ -134,7 +136,9 @@ def validate_api_configuration(
         additional_params: "{}"
         schedule_interval_minutes: 30
         stop_after_hours: 1.5
-        start_at: ""    2. API with complex parameters (SCHEDULED START):
+        start_at: ""
+
+    2. API with complex parameters:
         mcp_api_key: "your_mcp_key_here"
         name: "Weather Alert Monitor"
         description: "Monitor severe weather alerts"
@@ -356,7 +360,7 @@ async def activate_monitoring(config_id, mcp_api_key):
     2. If validation successful, call this function with the config_id
     3. Monitoring will run automatically according to the validated schedule
 
-    Parameters:
+    ARGUMENTS:
     - config_id: The ID from successful validate_api_configuration() execution (required)
     - mcp_api_key: User's MCP API key for verification (must match validation step)
 
@@ -464,26 +468,6 @@ async def activate_monitoring(config_id, mcp_api_key):
             print(
                 f"Executing API monitoring job for {name} at {now.isoformat()}. Next call at {next_call.isoformat()}"
             )
-            # If the current time is past the stop time, do not execute the job but set is_active to False
-            if now > stop_at:
-                print(
-                    f"Stopping API monitoring job for {name} as the stop time has been reached."
-                )
-                try:
-                    job_conn = connect_to_db()
-                    job_cur = job_conn.cursor()
-                    job_cur.execute(
-                        """
-                        UPDATE api_configurations SET is_active = %s WHERE config_id = %s
-                        """,
-                        (False, config_id),
-                    )
-                    job_conn.commit()
-                    job_cur.close()
-                    job_conn.close()
-                except Exception as db_exc:
-                    print(f"Failed to update configuration status: {db_exc}")
-                return  # Stop the job if the time has passed
 
             try:
                 # Extract API configuration parameters
@@ -551,13 +535,32 @@ async def activate_monitoring(config_id, mcp_api_key):
                 job_cur = job_conn.cursor()
 
                 # Mark config as active (only once, on first run)
-                job_cur.execute(
-                    """
-                    UPDATE api_configurations SET is_active = %s WHERE config_id = %s
-                    """,
-                    (True, config_id),
+                if not config["is_active"]:
+                    job_cur.execute(
+                        """
+                        UPDATE api_configurations SET is_active = %s WHERE config_id = %s
+                        """,
+                        (True, config_id),
+                    )
+                    print(f"Marked configuration {config_id} as active.")
+
+                # Check if this is the last call by comparing current time to stop_at
+                current_time = datetime.now()
+                next_call_time = current_time + timedelta(
+                    minutes=schedule_interval_minutes
                 )
-                print(f"Marked configuration {config_id} as active.")
+
+                if next_call_time >= stop_at:
+                    # This is the last call, mark as inactive
+                    job_cur.execute(
+                        """
+                        UPDATE api_configurations SET is_active = %s WHERE config_id = %s
+                        """,
+                        (False, config_id),
+                    )
+                    print(
+                        f"Last call for configuration {config_id}. Marked as inactive."
+                    )
 
                 # Insert the actual API call result
                 job_cur.execute(
@@ -654,7 +657,9 @@ def retrieve_monitored_data(config_id, mcp_api_key, mode="summary"):
 
     PREREQUISITE: Must call validate_api_configuration() first and obtain a config_id from successful validation, then activate_monitoring() to start monitoring.
 
-    This function can be called at any time after monitoring activation to retrieve the latest data collected by the monitoring system.    Parameters:
+    This function can be called at any time after monitoring activation to retrieve the latest data collected by the monitoring system.
+
+    ARGUMENTS:
     - config_id: The ID of the API configuration to retrieve data for (required)
     - mcp_api_key: User's MCP API key for verification (must match validation step)
     - mode: Data return mode - "summary" (LLM-optimized), "details" (full responses, minimal metadata), "full" (everything)
@@ -666,7 +671,9 @@ def retrieve_monitored_data(config_id, mcp_api_key, mode="summary"):
 
     2. Retrieve data for weather alerts:
         config_id: 987654321
-        mcp_api_key: "your_mcp_key_here"    Returns:
+        mcp_api_key: "your_mcp_key_here"
+
+    Returns:
     - Dictionary with monitoring status in one of three formats based on mode parameter
 
     SUMMARY mode (LLM-optimized, default):
