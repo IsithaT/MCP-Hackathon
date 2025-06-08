@@ -13,7 +13,7 @@ const port = process.env.PORT || 3001;
 // Whitelist of allowed client origins
 const allowedOrigins = [
     'http://localhost:3000',
-    'https://mcp-hackathon.vercel.app/',
+    'https://mcp-hackathon.vercel.app',
     'http://your-production-domain.com'
 ];
 
@@ -37,11 +37,11 @@ const openCorsOptions = {
     credentials: true
 };
 
-app.use(cors({
-    origin: allowedOrigins,
-    credentials: true,
-    methods: ['GET', 'POST', 'OPTIONS']
-}));
+// app.use(cors({
+//     origin: allowedOrigins,
+//     credentials: true,
+//     methods: ['GET', 'POST', 'OPTIONS']
+// }));
 
 // Middleware
 app.use(express.json());
