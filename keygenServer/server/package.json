@@ -4,8 +4,8 @@
   "main": "server.js",
   "scripts": {
     "build": "tsc",
-    "start": "node server.js",
-    "dev": "ts-node server.ts",
+    "start": "node ./dist/server.js",
+    "dev": "nodemon server.ts",
     "watch": "nodemon --exec ts-node server.ts"
   },
   "license": "MIT",
