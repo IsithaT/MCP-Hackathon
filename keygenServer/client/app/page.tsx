@@ -1,12 +1,17 @@
 'use client';
 import { auth, googleProvider } from '@/libs/firebase';
 import { signInWithPopup } from 'firebase/auth';
+import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import { useRouter } from 'next/navigation';
+import { useCallback } from 'react';
 
 export default function LoginPage() {
   const router = useRouter();
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = useCallback(async () => {
+    // Dynamically import firebase only on client
+    const { auth, googleProvider } = await import('@/libs/firebase');
+    const { signInWithPopup } = await import('firebase/auth');
     try {
       await signInWithPopup(auth, googleProvider);
       router.push('/main');
@@ -14,7 +19,8 @@ export default function LoginPage() {
       alert('Login failed');
       console.error(err);
     }
-  };
+  }, [router]);
+
 
   return (
     <div className="min-h-screen flex items-center justify-center p-3 md:p-6 max-w-2xl mx-auto">
