@@ -1,6 +1,5 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { auth } from '@/libs/firebase';
 import { useRouter } from 'next/navigation';
 
 export default function MainPage() {
@@ -22,6 +21,12 @@ export default function MainPage() {
     });
     return () => unsub();
   }, [router]);
+
+  const handleSignOut = async () => {
+    const { auth } = await import('@/libs/firebase');
+    await auth.signOut();
+    router.push('/');
+  };
 
   const generateApiKey = async () => {
     try {
@@ -86,8 +91,9 @@ export default function MainPage() {
               <p className="text-sm md:text-base text-secondary">
                 Generate your MCP API key for monitoring APIs
               </p>
-            </div>            <button
-              onClick={() => auth.signOut().then(() => router.push('/'))}
+            </div>
+            <button
+              onClick={handleSignOut}
               className="neuro-button px-3 py-2 md:px-4 md:py-2 text-sm md:text-base text-button font-medium"
             >
               Sign Out
