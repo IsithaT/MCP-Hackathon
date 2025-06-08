@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import requests
 
+from apscheduler.schedulers.blocking import BlockingScheduler
 
 # Load environment variables from .env file
 load_dotenv(override=True)
@@ -82,6 +83,44 @@ def verify_mcp_api_key(api_key):
         }
     except Exception as e:
         return {"success": False, "message": f"Key verification error: {str(e)}"}
+
+
+def cleanup_old_configurations():
+    cleanup_situations = [
+        """
+        DELETE FROM api_configurations
+        WHERE stop_at IS NOT NULL
+            AND stop_at < NOW() - INTERVAL '14 days';
+        """,
+    ]
+
+    conn = None
+    try:
+        conn = connect_to_db()
+        with conn.cursor() as cur:
+            for raw_sql in cleanup_situations:
+                sql = raw_sql.strip()
+                if not sql:
+                    continue
+
+                cur.execute(sql)
+                deleted = cur.rowcount
+                print(f"[CLEANUP] {deleted} rows deleted.")
+        conn.commit()
+
+    except Exception as e:
+        print(f"[ERROR] cleanup failed: {e}")
+
+    finally:
+        if conn:
+            conn.close()
+
+
+def job_schedule():
+    sched = BlockingScheduler()
+    sched.add_job(cleanup_old_configurations, "cron", hour=0, minute=0)
+    print("cleanup job scheduled at 00:00 UTC")
+    sched.start()
 
 
 def validate_api_configuration(
@@ -977,38 +1016,41 @@ import asyncio
 
 
 async def main():
-    validation_response = validate_api_configuration(
-        mcp_api_key=os.getenv("MCP_API_KEY"),
-        name="Dog Facts API",
-        description="Monitor random dog facts from a free API",
-        method="GET",
-        base_url="https://dogapi.dog",
-        endpoint="api/v2/facts",
-        param_keys_values="",
-        header_keys_values="",
-        additional_params="{}",
-        schedule_interval_minutes=0.05,
-        stop_after_hours=1,
-        start_at="",
-    )
-    print(validation_response)
-    print()
-    print()
+    cleanup_old_configurations()
+    job_schedule()
 
-    activate_monitoring_response = await activate_monitoring(
-        config_id=validation_response.get("config_id"),
-        mcp_api_key="os.getenv('MCP_API_KEY')",
-    )
-    print(activate_monitoring_response)
-    print()
-    print()
+    # validation_response = validate_api_configuration(
+    #     mcp_api_key=os.getenv("MCP_API_KEY"),
+    #     name="Dog Facts API",
+    #     description="Monitor random dog facts from a free API",
+    #     method="GET",
+    #     base_url="https://dogapi.dog",
+    #     endpoint="api/v2/facts",
+    #     param_keys_values="",
+    #     header_keys_values="",
+    #     additional_params="{}",
+    #     schedule_interval_minutes=0.05,
+    #     stop_after_hours=1,
+    #     start_at="",
+    # )
+    # print(validation_response)
+    # print()
+    # print()
+
+    # activate_monitoring_response = await activate_monitoring(
+    #     config_id=validation_response.get("config_id"),
+    #     mcp_api_key="os.getenv('MCP_API_KEY')",
+    # )
+    # print(activate_monitoring_response)
+    # print()
+    # print()
 
     await asyncio.sleep(10)
-    response = retrieve_monitored_data(
-        config_id=activate_monitoring_response.get("config_id"),
-        mcp_api_key=os.getenv("MCP_API_KEY"),
-    )
-    print(json.dumps(response, indent=2, default=str))
+    # response = retrieve_monitored_data(
+    #     config_id=activate_monitoring_response.get("config_id"),
+    #     mcp_api_key=os.getenv("MCP_API_KEY"),
+    # )
+    # print(json.dumps(response, indent=2, default=str))
 
 
 if __name__ == "__main__":
