@@ -117,14 +117,11 @@ def validate_api_configuration(
     - endpoint: The specific API endpoint
     - param_keys_values: Parameter key-value pairs, one per line
     - header_keys_values: Header key-value pairs, one per line
-    - additional_params: Optional JSON string for complex parameters
-    - schedule_interval_minutes: Minutes between calls
-    - stop_after_hours: Hours after which to stop (max 168 = 1 week)
+    - additional_params: Optional JSON string for complex parameters    - schedule_interval_minutes: Minutes between calls
+    - stop_after_hours: Hours after which to stop (supports decimals, max 168 = 1 week)
     - start_at: When to start the monitoring (datetime string or None for immediate)
 
-    Input Examples:
-
-    1. Simple GET request to monitor stock price:
+    Input Examples:    1. Simple GET request to monitor stock price:
         mcp_api_key: "your_mcp_key_here"
         name: "NVDA Stock Price"
         description: "Monitor NVIDIA stock price every 30 minutes"
@@ -135,7 +132,7 @@ def validate_api_configuration(
         header_keys_values: "Authorization: Bearer your_token"
         additional_params: "{}"
         schedule_interval_minutes: 30
-        stop_after_hours: 24
+        stop_after_hours: 1.5
         start_at: ""
 
     2. API with complex parameters:
@@ -149,7 +146,7 @@ def validate_api_configuration(
         header_keys_values: "X-API-Key: weather_key\nContent-Type: application/json"
         additional_params: '{"severity": ["severe", "extreme"], "types": ["tornado", "hurricane"]}'
         schedule_interval_minutes: 15
-        stop_after_hours: 48
+        stop_after_hours: 0.75
         start_at: "2024-06-15 09:00:00"
 
     Returns:
@@ -172,9 +169,7 @@ def validate_api_configuration(
                 "success": False,
                 "message": "MCP API key is required",
                 "config_id": None,
-            }
-
-        # Verify the MCP API key with the key generation server
+            }  # Verify the MCP API key with the key generation server
         key_verification = verify_mcp_api_key(mcp_api_key)
         if not key_verification["success"]:
             return {
@@ -217,12 +212,12 @@ def validate_api_configuration(
 
         if (
             not isinstance(stop_after_hours, (int, float))
-            or stop_after_hours < 1
+            or stop_after_hours < 0.1
             or stop_after_hours > 168
         ):
             return {
                 "success": False,
-                "message": "Stop after hours must be between 1 and 168 hours (1 week max)",
+                "message": "Stop after hours must be between 0.1 and 168 hours (1 week max)",
                 "config_id": None,
             }
 
@@ -472,7 +467,9 @@ async def activate_monitoring(config_id, mcp_api_key):
             )
             # If the current time is past the stop time, do not execute the job but set is_active to False
             if now > stop_at:
-                print(f"Stopping API monitoring job for {name} as the stop time has been reached.")
+                print(
+                    f"Stopping API monitoring job for {name} as the stop time has been reached."
+                )
                 try:
                     job_conn = connect_to_db()
                     job_cur = job_conn.cursor()
@@ -958,6 +955,7 @@ def retrieve_monitored_data(config_id, mcp_api_key, mode="summary"):
 ## testing
 import asyncio
 
+
 async def main():
     validation_response = validate_api_configuration(
         mcp_api_key=os.getenv("MCP_API_KEY"),
@@ -991,6 +989,7 @@ async def main():
         mcp_api_key=os.getenv("MCP_API_KEY"),
     )
     print(json.dumps(response, indent=2, default=str))
+
 
 if __name__ == "__main__":
     asyncio.run(main())

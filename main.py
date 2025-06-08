@@ -1,11 +1,9 @@
 import gradio as gr
-from api_client import call_api
 from api_monitor import (
     validate_api_configuration,
     activate_monitoring,
     retrieve_monitored_data,
 )
-import json
 
 
 # API Validation Tab
@@ -45,7 +43,9 @@ validation_tab = gr.Interface(
         gr.Number(
             label="Schedule Interval (minutes)", value=20, minimum=1, maximum=1440
         ),
-        gr.Number(label="Stop After (hours)", value=24, minimum=1, maximum=168),
+        gr.Number(
+            label="Stop After (hours)", value=24, minimum=0.1, maximum=168, step=0.1
+        ),
         gr.Textbox(
             label="Start Time (optional)",
             placeholder="YYYY-MM-DD HH:MM:SS or leave empty for immediate start",
@@ -54,7 +54,7 @@ validation_tab = gr.Interface(
     ],
     outputs=gr.Textbox(label="Validation Result", lines=10),
     title="API Validation & Storage",
-    description="STEP 1: Validate and test your API configuration. This tool tests the API call and stores the configuration if successful. If validation fails, retry with corrected parameters. If validation succeeds, proceed directly to 'Activate Scheduler' tab with the returned Config ID. Required for LLM tools that need to monitor external APIs periodically. Max monitoring period is 1 week (168 hours).",
+    description="STEP 1: Validate and test your API configuration. This tool tests the API call and stores the configuration if successful. If validation fails, retry with corrected parameters. If validation succeeds, proceed directly to 'Activate Scheduler' tab with the returned Config ID. Required for LLM tools that need to monitor external APIs periodically. Max monitoring period is 1 week (168 hours). Supports decimal hours (e.g., 0.5 for 30 minutes).",
     flagging_mode="manual",
     flagging_options=["Invalid Request", "API Error", "Config Issue", "Other"],
     examples=[
@@ -69,7 +69,7 @@ validation_tab = gr.Interface(
             "",
             "{}",
             30,
-            2,
+            1.5,
             "",
         ],
         [
@@ -83,7 +83,7 @@ validation_tab = gr.Interface(
             "",
             "{}",
             60,
-            4,
+            0.5,
             "",
         ],
         [
@@ -97,7 +97,7 @@ validation_tab = gr.Interface(
             "Accept: application/vnd.github.v3+json\nUser-Agent: MCP-Monitor",
             "{}",
             120,
-            12,
+            2.25,
             "",
         ],
     ],
