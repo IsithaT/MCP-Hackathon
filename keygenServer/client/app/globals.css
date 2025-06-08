@@ -1,26 +1,176 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  /* Sleek modern neumorphic palette */
+  --background: #f0f0f3;
+  --surface: #f8f9fa;
+  --foreground: #1a1a1a;
+  --text-muted: #6c757d;
+  --text-button: #2d3748;
+  --text-button-hover: #1a202c;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Refined shadow system - more subtle and realistic */
+  --shadow-light: #ffffff;
+  --shadow-dark: #d1d5db;
+  --shadow-darker: #c7cbcf;
+
+  /* Modern accent colors */
+  --primary: #475569;
+  --primary-dark: #334155;
+  --accent: #8b5cf6;
+  --success: #10b981;
+  --error: #ef4444;
+  --warning: #f59e0b;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #1e1e1e;
+    --surface: #2a2a2a;
+    --foreground: #ffffff;
+    --text-muted: #a0a0a0;
+    --text-button: #ffffff;
+    --text-button-hover: #f0f0f0;
+    --shadow-light: #2a2a2a;
+    --shadow-dark: #0a0a0a;
+    --shadow-darker: #000000;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-vollkorn), serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+  /* Prevent horizontal scroll */
+  width: 100vw;
+  max-width: 100%;
+}
+
+/* Sleek Neumorphic Components - All Elements Pop Out */
+
+/* Main container - elevated with subtle shadows */
+.neuro-container {
+  background: var(--surface);
+  box-shadow:
+    6px 6px 12px var(--shadow-dark),
+    -6px -6px 12px var(--shadow-light);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Cards - medium elevation, compact */
+.neuro-card {
+  background: var(--surface);
+  box-shadow:
+    4px 4px 8px var(--shadow-dark),
+    -4px -4px 8px var(--shadow-light);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Primary action button - sleek and modern */
+.neuro-button {
+  background: var(--surface);
+  color: var(--text-button);
+  box-shadow:
+    3px 3px 6px var(--shadow-dark),
+    -3px -3px 6px var(--shadow-light);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.neuro-button:hover {
+  color: var(--text-button-hover);
+  transform: translateY(-1px);
+  box-shadow:
+    4px 4px 8px var(--shadow-dark),
+    -4px -4px 8px var(--shadow-light);
+}
+
+.neuro-button:active {
+  transform: translateY(0px);
+  box-shadow:
+    2px 2px 4px var(--shadow-dark),
+    -2px -2px 4px var(--shadow-light);
+}
+
+/* Accent button for primary actions */
+.neuro-button-primary {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: white;
+  box-shadow:
+    3px 3px 6px var(--shadow-dark),
+    -3px -3px 6px var(--shadow-light);
+  border-radius: 10px;
+  border: none;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.neuro-button-primary:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    4px 4px 8px var(--shadow-dark),
+    -4px -4px 8px var(--shadow-light);
+}
+
+.neuro-button-primary:active {
+  transform: translateY(0px);
+  box-shadow:
+    2px 2px 4px var(--shadow-dark),
+    -2px -2px 4px var(--shadow-light);
+}
+
+/* Content display areas - minimal elevation */
+.neuro-display {
+  background: var(--background);
+  box-shadow:
+    2px 2px 4px var(--shadow-dark),
+    -2px -2px 4px var(--shadow-light);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+/* Input fields - completely flat, no shadows */
+.neuro-input {
+  background: var(--background);
+  border: 1px solid var(--shadow-dark);
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.neuro-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+/* Text color utilities */
+.text-primary {
+  color: var(--foreground);
+}
+
+.text-secondary {
+  color: var(--text-muted);
+}
+
+.text-button {
+  color: var(--text-button);
+}
+
+.text-button:hover {
+  color: var(--text-button-hover);
 }
