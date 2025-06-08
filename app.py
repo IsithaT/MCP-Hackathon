@@ -41,14 +41,14 @@ validation_tab = gr.Interface(
             value="{}",
         ),
         gr.Number(
-            label="Schedule Interval (minutes)", value=20, minimum=1, maximum=1440
+            label="Schedule Interval (minutes)", value=20, minimum=0.1, maximum=1440
         ),
         gr.Number(
             label="Stop After (hours)", value=24, minimum=0.1, maximum=168, step=0.1
         ),
         gr.Textbox(
-            label="Start Time (optional)",
-            placeholder="YYYY-MM-DD HH:MM:SS or leave empty for immediate start",
+            label="Start Time (optional - leave empty for immediate start)",
+            placeholder="Leave empty for immediate start, or enter YYYY-MM-DD HH:MM:SS for scheduled start",
             value="",
         ),
     ],

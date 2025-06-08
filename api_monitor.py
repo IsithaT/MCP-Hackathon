@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import requests
 
+from apscheduler.schedulers.blocking import BlockingScheduler
 
 # Load environment variables from .env file
 load_dotenv(override=True)
@@ -25,11 +26,18 @@ def connect_to_db():
         raise ValueError(
             "Database password not found in environment variables. Please set DB_PASSWORD."
         )
+
+    # Get database connection details from environment variables with defaults
+    db_host = os.getenv("DB_HOST")
+    db_port = int(os.getenv("DB_PORT"))
+    db_name = os.getenv("DB_NAME")
+    db_user = os.getenv("DB_USER")
+
     return psycopg2.connect(
-        host="aws-0-us-west-1.pooler.supabase.com",
-        port=6543,
-        database="postgres",
-        user="postgres.rivuplskngyevyzlshuh",
+        host=db_host,
+        port=db_port,
+        database=db_name,
+        user=db_user,
         password=db_password,
         cursor_factory=psycopg2.extras.DictCursor,
     )
@@ -89,7 +97,7 @@ def validate_api_configuration(
     additional_params,
     schedule_interval_minutes,
     stop_after_hours,
-    start_at,
+    start_at,  # IMPORTANT: Use empty string "" for immediate start (most common case)
 ):
     """
     TOOL: Validate and store API configuration for monitoring.
@@ -101,6 +109,10 @@ def validate_api_configuration(
     before proceeding to activate_monitoring(). The API call may return success=True but contain
     error messages (like "401 Unauthorized", "Invalid API key", etc.) in the sample_response.
 
+    CRITICAL: Always try to add parameters that will limit the API response to a manageable size.
+
+    CRITICAL: Be sure to always clearly inform the user of the config_id after a desired validation result.
+
     WORKFLOW:
     1. Call this function to validate API configuration
     2. If success=False: Fix parameters and retry this function
@@ -108,7 +120,7 @@ def validate_api_configuration(
     4. If sample_response contains error messages: Fix API parameters and retry validation
     5. If sample_response looks valid: Use config_id in activate_monitoring() to activate monitoring
 
-    Parameters:
+    ARGUMENTS:
     - mcp_api_key: MCP API key serves as user identifier
     - name: User-friendly name for the monitoring task
     - description: Description of what is being monitored
@@ -117,11 +129,16 @@ def validate_api_configuration(
     - endpoint: The specific API endpoint
     - param_keys_values: Parameter key-value pairs, one per line
     - header_keys_values: Header key-value pairs, one per line
-    - additional_params: Optional JSON string for complex parameters    - schedule_interval_minutes: Minutes between calls
+    - additional_params: Optional JSON string for complex parameters
+    - schedule_interval_minutes: Minutes between calls
     - stop_after_hours: Hours after which to stop (supports decimals, max 168 = 1 week)
-    - start_at: When to start the monitoring (datetime string or None for immediate)
+    - start_at: Optional datetime string for when to start the monitoring.
 
-    Input Examples:    1. Simple GET request to monitor stock price:
+    IMPORTANT: Leave as empty string "" for immediate start (most common use case, always default to this if no start time provided). Only provide a datetime string (e.g., "2024-06-15 09:00:00") if you need to schedule monitoring for a specific future time.
+
+    Input Examples:
+
+    1. Simple GET request to monitor stock price:
         mcp_api_key: "your_mcp_key_here"
         name: "NVDA Stock Price"
         description: "Monitor NVIDIA stock price every 30 minutes"
@@ -135,18 +152,18 @@ def validate_api_configuration(
         stop_after_hours: 1.5
         start_at: ""
 
-    2. API with complex parameters:
+    2. Weather monitoring with free API:
         mcp_api_key: "your_mcp_key_here"
-        name: "Weather Alert Monitor"
-        description: "Monitor severe weather alerts"
-        method: "POST"
-        base_url: "https://api.weather.com"
-        endpoint: "alerts"
-        param_keys_values: "lat: 40.7128\nlon: -74.0060"
-        header_keys_values: "X-API-Key: weather_key\nContent-Type: application/json"
-        additional_params: '{"severity": ["severe", "extreme"], "types": ["tornado", "hurricane"]}'
-        schedule_interval_minutes: 15
-        stop_after_hours: 0.75
+        name: "Weather Monitor"
+        description: "Monitor current weather conditions every 2 hours for one week using Open-Meteo free API"
+        method: "GET"
+        base_url: "https://api.open-meteo.com"
+        endpoint: "v1/forecast"
+        param_keys_values: "latitude: 40.7128\nlongitude: -74.0060\ncurrent: temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m\ntimezone: America/New_York"
+        header_keys_values: "Content-Type: application/json"
+        additional_params: "{}"
+        schedule_interval_minutes: 120
+        stop_after_hours: 168
         start_at: "2024-06-15 09:00:00"
 
     Returns:
@@ -160,7 +177,8 @@ def validate_api_configuration(
         "sample_response": {...},
         "stop_at": "2025-06-11T12:00:00Z",
         "start_at": "2025-06-04T12:00:00Z"
-    }    NEXT STEP: If success=True, call activate_monitoring(config_id, mcp_api_key) to activate monitoring
+    }
+    NEXT STEP: If success=True, call activate_monitoring(config_id, mcp_api_key) to activate monitoring
     """
     try:
         # Validate input parameters
@@ -357,7 +375,7 @@ async def activate_monitoring(config_id, mcp_api_key):
     2. If validation successful, call this function with the config_id
     3. Monitoring will run automatically according to the validated schedule
 
-    Parameters:
+    ARGUMENTS:
     - config_id: The ID from successful validate_api_configuration() execution (required)
     - mcp_api_key: User's MCP API key for verification (must match validation step)
 
@@ -465,26 +483,6 @@ async def activate_monitoring(config_id, mcp_api_key):
             print(
                 f"Executing API monitoring job for {name} at {now.isoformat()}. Next call at {next_call.isoformat()}"
             )
-            # If the current time is past the stop time, do not execute the job but set is_active to False
-            if now > stop_at:
-                print(
-                    f"Stopping API monitoring job for {name} as the stop time has been reached."
-                )
-                try:
-                    job_conn = connect_to_db()
-                    job_cur = job_conn.cursor()
-                    job_cur.execute(
-                        """
-                        UPDATE api_configurations SET is_active = %s WHERE config_id = %s
-                        """,
-                        (False, config_id),
-                    )
-                    job_conn.commit()
-                    job_cur.close()
-                    job_conn.close()
-                except Exception as db_exc:
-                    print(f"Failed to update configuration status: {db_exc}")
-                return  # Stop the job if the time has passed
 
             try:
                 # Extract API configuration parameters
@@ -552,13 +550,32 @@ async def activate_monitoring(config_id, mcp_api_key):
                 job_cur = job_conn.cursor()
 
                 # Mark config as active (only once, on first run)
-                job_cur.execute(
-                    """
-                    UPDATE api_configurations SET is_active = %s WHERE config_id = %s
-                    """,
-                    (True, config_id),
+                if not config["is_active"]:
+                    job_cur.execute(
+                        """
+                        UPDATE api_configurations SET is_active = %s WHERE config_id = %s
+                        """,
+                        (True, config_id),
+                    )
+                    print(f"Marked configuration {config_id} as active.")
+
+                # Check if this is the last call by comparing current time to stop_at
+                current_time = datetime.now()
+                next_call_time = current_time + timedelta(
+                    minutes=schedule_interval_minutes
                 )
-                print(f"Marked configuration {config_id} as active.")
+
+                if next_call_time >= stop_at:
+                    # This is the last call, mark as inactive
+                    job_cur.execute(
+                        """
+                        UPDATE api_configurations SET is_active = %s WHERE config_id = %s
+                        """,
+                        (False, config_id),
+                    )
+                    print(
+                        f"Last call for configuration {config_id}. Marked as inactive."
+                    )
 
                 # Insert the actual API call result
                 job_cur.execute(
@@ -655,7 +672,9 @@ def retrieve_monitored_data(config_id, mcp_api_key, mode="summary"):
 
     PREREQUISITE: Must call validate_api_configuration() first and obtain a config_id from successful validation, then activate_monitoring() to start monitoring.
 
-    This function can be called at any time after monitoring activation to retrieve the latest data collected by the monitoring system.    Parameters:
+    This function can be called at any time after monitoring activation to retrieve the latest data collected by the monitoring system.
+
+    ARGUMENTS:
     - config_id: The ID of the API configuration to retrieve data for (required)
     - mcp_api_key: User's MCP API key for verification (must match validation step)
     - mode: Data return mode - "summary" (LLM-optimized), "details" (full responses, minimal metadata), "full" (everything)
@@ -667,7 +686,9 @@ def retrieve_monitored_data(config_id, mcp_api_key, mode="summary"):
 
     2. Retrieve data for weather alerts:
         config_id: 987654321
-        mcp_api_key: "your_mcp_key_here"    Returns:
+        mcp_api_key: "your_mcp_key_here"
+
+    Returns:
     - Dictionary with monitoring status in one of three formats based on mode parameter
 
     SUMMARY mode (LLM-optimized, default):
@@ -957,6 +978,7 @@ import asyncio
 
 
 async def main():
+
     validation_response = validate_api_configuration(
         mcp_api_key=os.getenv("MCP_API_KEY"),
         name="Dog Facts API",

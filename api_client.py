@@ -1,6 +1,5 @@
 import requests
 import json
-import psycopg2
 
 
 def parse_key_value_string(key_value_string):
