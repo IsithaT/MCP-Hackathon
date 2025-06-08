@@ -89,7 +89,7 @@ def validate_api_configuration(
     additional_params,
     schedule_interval_minutes,
     stop_after_hours,
-    start_at,
+    start_at,  # IMPORTANT: Use empty string "" for immediate start (most common case)
 ):
     """
     TOOL: Validate and store API configuration for monitoring.
@@ -118,10 +118,11 @@ def validate_api_configuration(
     - param_keys_values: Parameter key-value pairs, one per line
     - header_keys_values: Header key-value pairs, one per line
     - additional_params: Optional JSON string for complex parameters    - schedule_interval_minutes: Minutes between calls
-    - stop_after_hours: Hours after which to stop (supports decimals, max 168 = 1 week)
-    - start_at: When to start the monitoring (datetime string or None for immediate)
+    - stop_after_hours: Hours after which to stop (supports decimals, max 168 = 1 week)    - start_at: Optional datetime string for when to start the monitoring.
+                 IMPORTANT: Leave as empty string "" for immediate start (most common use case).
+                 Only provide a datetime string (e.g., "2024-06-15 09:00:00") if you need to schedule monitoring for a specific future time.
 
-    Input Examples:    1. Simple GET request to monitor stock price:
+    Input Examples:    1. Simple GET request to monitor stock price (IMMEDIATE START - most common):
         mcp_api_key: "your_mcp_key_here"
         name: "NVDA Stock Price"
         description: "Monitor NVIDIA stock price every 30 minutes"
@@ -133,9 +134,7 @@ def validate_api_configuration(
         additional_params: "{}"
         schedule_interval_minutes: 30
         stop_after_hours: 1.5
-        start_at: ""
-
-    2. API with complex parameters:
+        start_at: ""    2. API with complex parameters (SCHEDULED START):
         mcp_api_key: "your_mcp_key_here"
         name: "Weather Alert Monitor"
         description: "Monitor severe weather alerts"
