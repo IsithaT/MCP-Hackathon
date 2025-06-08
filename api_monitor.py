@@ -470,6 +470,25 @@ async def activate_monitoring(config_id, mcp_api_key):
             print(
                 f"Executing API monitoring job for {name} at {now.isoformat()}. Next call at {next_call.isoformat()}"
             )
+            # If the current time is past the stop time, do not execute the job but set is_active to False
+            if now > stop_at:
+                print(f"Stopping API monitoring job for {name} as the stop time has been reached.")
+                try:
+                    job_conn = connect_to_db()
+                    job_cur = job_conn.cursor()
+                    job_cur.execute(
+                        """
+                        UPDATE api_configurations SET is_active = %s WHERE config_id = %s
+                        """,
+                        (False, config_id),
+                    )
+                    job_conn.commit()
+                    job_cur.close()
+                    job_conn.close()
+                except Exception as db_exc:
+                    print(f"Failed to update configuration status: {db_exc}")
+                return  # Stop the job if the time has passed
+
             try:
                 # Extract API configuration parameters
                 method = config.get("method", "GET")
@@ -542,6 +561,7 @@ async def activate_monitoring(config_id, mcp_api_key):
                     """,
                     (True, config_id),
                 )
+                print(f"Marked configuration {config_id} as active.")
 
                 # Insert the actual API call result
                 job_cur.execute(
@@ -936,9 +956,11 @@ def retrieve_monitored_data(config_id, mcp_api_key, mode="summary"):
 
 
 ## testing
-if __name__ == "__main__":
+import asyncio
+
+async def main():
     validation_response = validate_api_configuration(
-        mcp_api_key="your_api_key",
+        mcp_api_key=os.getenv("MCP_API_KEY"),
         name="Dog Facts API",
         description="Monitor random dog facts from a free API",
         method="GET",
@@ -947,24 +969,28 @@ if __name__ == "__main__":
         param_keys_values="",
         header_keys_values="",
         additional_params="{}",
-        schedule_interval_minutes=20.5,
-        stop_after_hours=24,
+        schedule_interval_minutes=0.05,
+        stop_after_hours=1,
         start_at="",
     )
     print(validation_response)
     print()
     print()
 
-    activate_monitoring_response = activate_monitoring(
+    activate_monitoring_response = await activate_monitoring(
         config_id=validation_response.get("config_id"),
-        mcp_api_key="your_api_key",
+        mcp_api_key="os.getenv('MCP_API_KEY')",
     )
     print(activate_monitoring_response)
     print()
     print()
 
+    await asyncio.sleep(10)
     response = retrieve_monitored_data(
         config_id=activate_monitoring_response.get("config_id"),
-        mcp_api_key="your_api_key",
+        mcp_api_key=os.getenv("MCP_API_KEY"),
     )
     print(json.dumps(response, indent=2, default=str))
+
+if __name__ == "__main__":
+    asyncio.run(main())
