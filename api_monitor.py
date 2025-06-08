@@ -6,10 +6,9 @@ import psycopg2
 import psycopg2.extras
 import os
 from dotenv import load_dotenv
-import time
-import threading
-import asyncio
+
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+import requests
 
 
 # Load environment variables from .env file
@@ -34,6 +33,48 @@ def connect_to_db():
         password=db_password,
         cursor_factory=psycopg2.extras.DictCursor,
     )
+
+
+def verify_mcp_api_key(api_key):
+    """
+    Verify the MCP API key with the key generation server.
+
+    Parameters:
+    - api_key: The MCP API key to verify
+
+    Returns:
+    - Dictionary with success status and message
+    """
+    try:
+        # Get the key server URL from environment or use default
+        key_server_url = os.getenv("KEY_SERVER_URL", "http://localhost:3001")
+
+        response = requests.post(
+            f"{key_server_url}/api/verifyKey",
+            json={"apiKey": api_key},
+            headers={"Content-Type": "application/json"},
+            timeout=10,
+        )
+
+        if response.status_code == 200:
+            data = response.json()
+            if data.get("valid"):
+                return {"success": True, "message": "API key is valid"}
+            else:
+                return {"success": False, "message": "API key is invalid"}
+        else:
+            return {
+                "success": False,
+                "message": f"Key verification failed with status {response.status_code}",
+            }
+
+    except requests.exceptions.RequestException as e:
+        return {
+            "success": False,
+            "message": f"Failed to connect to key verification service: {str(e)}",
+        }
+    except Exception as e:
+        return {"success": False, "message": f"Key verification error: {str(e)}"}
 
 
 def validate_api_configuration(
@@ -122,9 +163,7 @@ def validate_api_configuration(
         "sample_response": {...},
         "stop_at": "2025-06-11T12:00:00Z",
         "start_at": "2025-06-04T12:00:00Z"
-    }
-
-    NEXT STEP: If success=True, call activate_monitoring(config_id, mcp_api_key) to activate monitoring
+    }    NEXT STEP: If success=True, call activate_monitoring(config_id, mcp_api_key) to activate monitoring
     """
     try:
         # Validate input parameters
@@ -132,6 +171,15 @@ def validate_api_configuration(
             return {
                 "success": False,
                 "message": "MCP API key is required",
+                "config_id": None,
+            }
+
+        # Verify the MCP API key with the key generation server
+        key_verification = verify_mcp_api_key(mcp_api_key)
+        if not key_verification["success"]:
+            return {
+                "success": False,
+                "message": f"API key verification failed: {key_verification['message']}",
                 "config_id": None,
             }
 
@@ -347,8 +395,8 @@ async def activate_monitoring(config_id, mcp_api_key):
     ERROR HANDLING: If config_id not found or invalid, returns success=False with error message
     """
 
-    #need to extract 
-    '''
+    # need to extract
+    """
     mcp_api_key,
     name,
     description,
@@ -362,18 +410,27 @@ async def activate_monitoring(config_id, mcp_api_key):
     stop_after_hours,
     time_to_start,
     this
-    '''
+    """
 
     # using time_to_start, schedule_interval_minutes, and stop_after_hours
-    #label using name and description
-    
+    # label using name and description
 
-
-    #attempt to create the scheduler
+    # attempt to create the scheduler
     try:
+        # Verify the MCP API key with the key generation server first
+        key_verification = verify_mcp_api_key(mcp_api_key)
+        if not key_verification["success"]:
+            return {
+                "success": False,
+                "message": f"API key verification failed: {key_verification['message']}",
+                "config_id": config_id,
+            }
+
         conn = connect_to_db()
         cur = conn.cursor()
-        cur.execute("SELECT * FROM api_configurations WHERE config_id = %s", (config_id,))
+        cur.execute(
+            "SELECT * FROM api_configurations WHERE config_id = %s", (config_id,)
+        )
         config_row = cur.fetchone()
         if not config_row:
             conn.close()
@@ -389,12 +446,11 @@ async def activate_monitoring(config_id, mcp_api_key):
                 "success": False,
                 "message": "Invalid mcp_api_key. You are not authorized to activate this configuration.",
                 "config_id": config_id,
-            }
-        # Extract scheduling parameters
+            }  # Extract scheduling parameters
         name = config.get("name", "Unknown")
         schedule_interval_minutes = float(config.get("schedule_interval_minutes", 20))
         stop_at = config.get("stop_at")
-        start_at = config.get("time_to_start")
+        start_at = config.get("start_at")
         if not start_at:
             start_at = datetime.now()
         else:
@@ -404,23 +460,90 @@ async def activate_monitoring(config_id, mcp_api_key):
             stop_at = start_at + timedelta(hours=config.get("stop_after_hours", 24))
         else:
             if not isinstance(stop_at, datetime):
-                stop_at = datetime.fromisoformat(str(stop_at))
-        # Dummy function to be scheduled
-        def dummy_job():
+                stop_at = datetime.fromisoformat(
+                    str(stop_at)
+                )  # Job function to make actual API calls
+
+        def api_monitoring_job():
             now = datetime.now()
             next_call = now + timedelta(minutes=schedule_interval_minutes)
-            print(f"Executing job for {name} at {now.isoformat()}. Next call at {next_call.isoformat()}")
+            print(
+                f"Executing API monitoring job for {name} at {now.isoformat()}. Next call at {next_call.isoformat()}"
+            )
             try:
+                # Extract API configuration parameters
+                method = config.get("method", "GET")
+                base_url = config.get("base_url")
+                endpoint = config.get("endpoint", "")
+                params = config.get("params", {})
+                headers = config.get("headers", {})
+                additional_params = config.get("additional_params", {})
+
+                # Convert JSON strings back to dicts if needed
+                if isinstance(params, str):
+                    params = json.loads(params) if params else {}
+                if isinstance(headers, str):
+                    headers = json.loads(headers) if headers else {}
+                if isinstance(additional_params, str):
+                    additional_params = (
+                        json.loads(additional_params) if additional_params else {}
+                    )
+
+                # Convert params and headers back to key-value string format for api_client
+                param_keys_values = (
+                    "\n".join([f"{k}: {v}" for k, v in params.items()])
+                    if params
+                    else ""
+                )
+                header_keys_values = (
+                    "\n".join([f"{k}: {v}" for k, v in headers.items()])
+                    if headers
+                    else ""
+                )
+                additional_params_str = (
+                    json.dumps(additional_params) if additional_params else "{}"
+                )
+
+                # Make the actual API call
+                api_result = api_client.call_api(
+                    method=method,
+                    base_url=base_url,
+                    endpoint=endpoint,
+                    param_keys_values=param_keys_values,
+                    header_keys_values=header_keys_values,
+                    additional_params=additional_params_str,
+                )
+
+                # Determine if the call was successful
+                is_successful = not (
+                    isinstance(api_result, str) and api_result.startswith("Error")
+                )
+                error_message = api_result if not is_successful else None
+                response_data = api_result if is_successful else None
+
+                # Convert response to JSON if it's a string representation
+                if is_successful and isinstance(response_data, str):
+                    try:
+                        if response_data.startswith("{") or response_data.startswith(
+                            "["
+                        ):
+                            response_data = json.loads(response_data)
+                    except json.JSONDecodeError:
+                        # Keep as string if not valid JSON
+                        pass
+
                 job_conn = connect_to_db()
                 job_cur = job_conn.cursor()
+
                 # Mark config as active (only once, on first run)
                 job_cur.execute(
                     """
                     UPDATE api_configurations SET is_active = %s WHERE config_id = %s
                     """,
-                    (True, config_id)
+                    (True, config_id),
                 )
-                # Insert a dummy result into api_call_results
+
+                # Insert the actual API call result
                 job_cur.execute(
                     """
                     INSERT INTO api_call_results (
@@ -429,42 +552,62 @@ async def activate_monitoring(config_id, mcp_api_key):
                     """,
                     (
                         config_id,
-                        json.dumps({
-                            "success": True,
-                            "message": f"Scheduler activated for '{name}'",
-                            "config_id": config_id,
-                            "schedule_interval_minutes": schedule_interval_minutes,
-                            "stop_at": stop_at.isoformat(),
-                            "next_call_at": next_call.isoformat(),
-                        }),
-                        True,
-                        None,
+                        (
+                            json.dumps(response_data)
+                            if response_data is not None
+                            else None
+                        ),
+                        is_successful,
+                        error_message,
                         now,
-                    )
+                    ),
                 )
                 job_conn.commit()
                 job_cur.close()
                 job_conn.close()
+
+                print(
+                    f"API call result for {name}: {'Success' if is_successful else 'Failed'}"
+                )
+                if not is_successful:
+                    print(f"Error: {error_message}")
+
             except Exception as job_exc:
-                print(f"Dummy job DB error: {job_exc}")
-            return {
-                "success": True,
-                "message": f"Scheduler activated for '{name}'",
-                "config_id": config_id,
-                "schedule_interval_minutes": schedule_interval_minutes,
-                "stop_at": stop_at.isoformat(),
-                "next_call_at": next_call.isoformat(),
-            }
-        # Setup AsyncIO scheduler
+                print(f"API monitoring job error for {name}: {job_exc}")
+                try:
+                    job_conn = connect_to_db()
+                    job_cur = job_conn.cursor()
+                    job_cur.execute(
+                        """
+                        INSERT INTO api_call_results (
+                            config_id, response_data, is_successful, error_message, called_at
+                        ) VALUES (%s, %s, %s, %s, %s)
+                        """,
+                        (
+                            config_id,
+                            None,
+                            False,
+                            f"Job execution error: {str(job_exc)}",
+                            now,
+                        ),
+                    )
+                    job_conn.commit()
+                    job_cur.close()
+                    job_conn.close()
+                except Exception as db_exc:
+                    print(
+                        f"Failed to log error to database: {db_exc}"
+                    )  # Setup AsyncIO scheduler
+
         scheduler = AsyncIOScheduler()
-        # Schedule the dummy job
+        # Schedule the API monitoring job
         scheduler.add_job(
-            dummy_job,
-            'interval',
+            api_monitoring_job,
+            "interval",
             minutes=schedule_interval_minutes,
             start_date=start_at,
             end_date=stop_at,
-            id=f"monitor_{config_id}"
+            id=f"monitor_{config_id}",
         )
         scheduler.start()
         conn.close()
@@ -474,7 +617,9 @@ async def activate_monitoring(config_id, mcp_api_key):
             "config_id": config_id,
             "schedule_interval_minutes": schedule_interval_minutes,
             "stop_at": stop_at.isoformat(),
-            "next_call_at": (start_at + timedelta(minutes=schedule_interval_minutes)).isoformat(),
+            "next_call_at": (
+                start_at + timedelta(minutes=schedule_interval_minutes)
+            ).isoformat(),
         }
     except Exception as e:
         return {
@@ -574,6 +719,15 @@ def retrieve_monitored_data(config_id, mcp_api_key, mode="summary"):
     ERROR HANDLING: If config_id not found or invalid, returns success=False with error message
     """
     try:
+        # Verify the MCP API key with the key generation server first
+        key_verification = verify_mcp_api_key(mcp_api_key)
+        if not key_verification["success"]:
+            return {
+                "success": False,
+                "message": f"API key verification failed: {key_verification['message']}",
+                "data": [],
+            }
+
         conn = connect_to_db()
         cur = conn.cursor()
         cur.execute(
@@ -780,6 +934,7 @@ def retrieve_monitored_data(config_id, mcp_api_key, mode="summary"):
             "data": [],
         }
 
+
 ## testing
 if __name__ == "__main__":
     validation_response = validate_api_configuration(
@@ -813,5 +968,3 @@ if __name__ == "__main__":
         mcp_api_key="your_api_key",
     )
     print(json.dumps(response, indent=2, default=str))
-
-
