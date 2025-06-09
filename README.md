@@ -36,3 +36,38 @@ user flow ish
 3. attempts to grab info for api
 4. add said info to database
 5. make sure that this schedule is robust hopefully
+
+## Deployment to Tailscale Server
+
+1. Update the server configuration in `deploy.sh`:
+
+   ```bash
+   SERVER_IP="your-tailscale-server-ip"
+   SERVER_USER="your-username"
+   ```
+
+2. Make the deploy script executable:
+
+   ```bash
+   chmod +x deploy.sh
+   ```
+
+3. Run the deployment:
+
+   ```bash
+   ./deploy.sh
+   ```
+
+4. On the server, set up the daily cron job:
+
+   ```bash
+   ./setup-cron.sh
+   ```
+
+The application will now run continuously and execute daily at 2 AM.
+
+## Server Management
+
+- Check service status: `sudo systemctl status mcp-hackathon`
+- View logs: `sudo tail -f /var/log/mcp-hackathon.log`
+- Restart service: `sudo systemctl restart mcp-hackathon`
