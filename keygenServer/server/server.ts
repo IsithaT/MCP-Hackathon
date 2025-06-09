@@ -8,7 +8,7 @@ import crypto from 'crypto';
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 3001;
+const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 10000;
 
 // Whitelist of allowed client origins
 const allowedOrigins = [
@@ -119,6 +119,6 @@ app.post('/api/addKey',
     }
 );
 
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
     console.log(`Server running on port ${port}`);
 });
