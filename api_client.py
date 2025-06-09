@@ -3,7 +3,7 @@ import json
 
 
 def parse_key_value_string(key_value_string):
-    """Parse a key-value string into a dictionary.
+    """Parse a key-value string into a dictionary (meant for API arguments).
 
     Parameters:
     - key_value_string: String with key-value pairs, one per line, separated by ':'
@@ -89,7 +89,9 @@ def call_api(
             x-api-key: your_api_key_here
             content-type: application/json
         additional_params: {"messages": [{"role": "user", "content": "Hello there!"}]}
-    """  # Build params and headers dictionaries from key-value pairs
+    """  
+    
+    # Build params and headers dictionaries from key-value pairs
     params = parse_key_value_string(param_keys_values)
     headers = parse_key_value_string(header_keys_values)
 

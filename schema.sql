@@ -49,24 +49,3 @@ INSERT INTO api_configurations (
     '2025-06-04T12:00:00',
     '2025-06-11T12:00:00'
 );
-
-INSERT INTO api_call_results (
-    config_id, response_data, is_successful, error_message
-) VALUES (
-    10101,
-    '{"symbol":"NVDA", "price":1142.50, "timestamp":"2025-06-03T14:20:00Z"}',
-    TRUE,
-    NULL
-);
-
-INSERT INTO api_call_results (
-    config_id, response_data, is_successful, error_message
-) VALUES (
-    10101,
-    NULL,
-    FALSE,
-    'Timeout while contacting the API'
-);
-
-select * from api_configurations;
-select * from api_call_results;

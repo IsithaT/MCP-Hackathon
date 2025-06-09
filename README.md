@@ -31,7 +31,7 @@ Hermes requires users to generate an MCP API key, which you can do right [here a
 
 1. **Validate API Configuration**: Use the `validate_api_configuration` function to check if your API configuration is valid. If the request fails, it will return the error. Else, it will save the configuration to the database and return a success message with `config_id`. The user/agent can then decide whether to proceed with monitoring based on the response (etc. can reject the API configuration if it doesn't show the desired data content).
 2. **Activate Monitoring**: Use the `activate_monitoring` function with the `config_id` from the previous step to start monitoring the API. This will set up a background task that will periodically check the API and store the responses.
-3. **Get Monitoring Data**: Use the `get_monitoring_data` function with the `config_id` to retrieve the monitoring data. You can specify the mode of data retrieval (summary, details, or full) to get the desired level of information. This can be called anytime after monitoring is activated.
+3. **Retrieve Monitored Data**: Use the `retrieve_monitored_data` function with the `config_id` to retrieve the monitoring data. You can specify the mode of data retrieval (summary, details, or full) to get the desired level of information. This can be called anytime after monitoring is activated.
 
 ### :warning: Important! :warning:
 
@@ -39,10 +39,14 @@ Call results and configurations will be deleted 14 days after the last call to t
 
 ## Problems we ran into
 
-Since (free) Gradio is stateless, we had to find a way to pass down information between both the different API calls and the user calls, while still ensuring privacy. We ended up using the MCP API key as a user identifier, which allowed us to separate user data while still being able to access it when needed. There was also the problem of having to validate the data and making sure that the user/agent is satisfied with the data before activating monitoring. We solved this by separating the whole process into multiple functions, which allowed us to validate the data before activating monitoring.
+Since (free) Gradio is stateless, we had to find a way to pass down information between both the different API calls and the user calls, while still ensuring privacy. We ended up using the MCP API key as a user identifier, which allowed us to separate user data while still being able to access it when needed.
+
+There was also the problem of having to validate the data and making sure that the user/agent is satisfied with the data before activating monitoring. We solved this by separating the whole process into multiple functions, which allowed us to validate the data before activating monitoring.
+
+Another problem we ran into was finding a way to pass the MCP API key automatically to the API calls without having to manually input it every time. We were unavble to find a way to do this, as the server is remote and we couldn't upload an environment variable to the server.
 
 ## Future Steps
 
-Currently, the API call results store the entire response, which can be quite large, especially for LLMs like Claude to handle (or reach conversation limits). In the future, we think that we can improve this by allowing users to specify a format for the response, such as only storing the text content or a specific field in the response. This would allow users to save space and make it easier to analyze the data later on.
+Currently, the API call results store the entire response, which can be quite large, especially for LLMs like Claude to handle (or reach conversation limits), hence the need for three different returns for monitored data. In the future, we think that we can improve this by allowing users to specify a format for the response, such as only storing the text content or a specific field in the response. This would allow users to save space and make it easier to analyze the data later on.
 
 Also, we plan to move the authentication backend off of Render, as Render spins down the backend after a period of inactivity, which can cause a lot of delay. (We used Render because Vercel would not work with our database library.)

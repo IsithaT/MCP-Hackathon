@@ -165,7 +165,7 @@ retrieve_tab = gr.Interface(
 demo = gr.TabbedInterface(
     [validation_tab, scheduler_tab, retrieve_tab],
     ["Validate & Store", "Activate Scheduler", "Retrieve Data"],
-    title="MCP API Monitoring System",
+    title="Hermes - Automated Asynchronous REST API Monitoring",
 )
 
 if __name__ == "__main__":

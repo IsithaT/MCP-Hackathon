@@ -200,6 +200,7 @@ def validate_api_configuration(
                 "config_id": None,
             }
 
+        # Validate required parameters
         if not name or not name.strip():
             return {
                 "success": False,
@@ -429,10 +430,8 @@ async def activate_monitoring(config_id, mcp_api_key):
     this
     """
 
-    # using time_to_start, schedule_interval_minutes, and stop_after_hours
-    # label using name and description
 
-    # attempt to create the scheduler
+    # Attempt to create the scheduler
     try:
         if not mcp_api_key or not mcp_api_key.strip() or mcp_api_key == "":
             mcp_api_key = os.getenv("MCP_API_KEY", "")
@@ -442,6 +441,7 @@ async def activate_monitoring(config_id, mcp_api_key):
                     "message": "MCP API key is required",
                     "config_id": None,
                 }
+            
         # Verify the MCP API key with the key generation server first
         key_verification = verify_mcp_api_key(mcp_api_key)
         if not key_verification["success"]:
@@ -471,7 +471,9 @@ async def activate_monitoring(config_id, mcp_api_key):
                 "success": False,
                 "message": "Invalid mcp_api_key. You are not authorized to activate this configuration.",
                 "config_id": config_id,
-            }  # Extract scheduling parameters
+            }  
+        
+        # Extract scheduling parameters
         name = config.get("name", "Unknown")
         schedule_interval_minutes = float(config.get("schedule_interval_minutes", 20))
         stop_at = config.get("stop_at")
@@ -487,7 +489,9 @@ async def activate_monitoring(config_id, mcp_api_key):
             if not isinstance(stop_at, datetime):
                 stop_at = datetime.fromisoformat(
                     str(stop_at)
-                )  # Job function to make actual API calls
+                )  
+                
+        # Job function to make actual API calls
 
         def api_monitoring_job():
             now = datetime.now()
@@ -643,7 +647,9 @@ async def activate_monitoring(config_id, mcp_api_key):
                 except Exception as db_exc:
                     print(
                         f"Failed to log error to database: {db_exc}"
-                    )  # Setup AsyncIO scheduler
+                    )  
+                    
+        # Setup AsyncIO scheduler
 
         scheduler = AsyncIOScheduler()
         # Schedule the API monitoring job
@@ -720,7 +726,7 @@ def retrieve_monitored_data(config_id, mcp_api_key, mode="summary"):
                 "timestamp": "2025-06-05T15:20:00",
                 "success": true,
                 "error": null,
-                "response_preview": "{'alerts': [{'type': 'tornado'}]}..."  // truncated
+                "response_preview": "{'alerts': [{'type': 'tornado'}]}..."  // truncated to 150 characters
             }
             // ... up to 5 most recent calls
         ],
@@ -935,7 +941,7 @@ def retrieve_monitored_data(config_id, mcp_api_key, mode="summary"):
                         "success": item.get("is_successful", False),
                         "response_data": item.get(
                             "response_data"
-                        ),  # Full response data
+                        ), 
                         "error": (
                             item.get("error_message")
                             if not item.get("is_successful")
@@ -967,7 +973,7 @@ def retrieve_monitored_data(config_id, mcp_api_key, mode="summary"):
                             else None
                         ),
                         "response_preview": (
-                            str(item.get("response_data", ""))[:100] + "..."
+                            str(item.get("response_data", ""))[:150] + "..."
                             if item.get("response_data")
                             else None
                         ),
@@ -991,47 +997,3 @@ def retrieve_monitored_data(config_id, mcp_api_key, mode="summary"):
             "message": f"Database connection failed: {str(e)}",
             "data": [],
         }
-
-
-## testing
-import asyncio
-
-
-async def main():
-
-    validation_response = validate_api_configuration(
-        mcp_api_key=os.getenv("MCP_API_KEY"),
-        name="Dog Facts API",
-        description="Monitor random dog facts from a free API",
-        method="GET",
-        base_url="https://dogapi.dog",
-        endpoint="api/v2/facts",
-        param_keys_values="",
-        header_keys_values="",
-        additional_params="{}",
-        schedule_interval_minutes=0.05,
-        stop_after_hours=1,
-        start_at="",
-    )
-    print(validation_response)
-    print()
-    print()
-
-    activate_monitoring_response = await activate_monitoring(
-        config_id=validation_response.get("config_id"),
-        mcp_api_key="os.getenv('MCP_API_KEY')",
-    )
-    print(activate_monitoring_response)
-    print()
-    print()
-
-    await asyncio.sleep(10)
-    response = retrieve_monitored_data(
-        config_id=activate_monitoring_response.get("config_id"),
-        mcp_api_key=os.getenv("MCP_API_KEY"),
-    )
-    print(json.dumps(response, indent=2, default=str))
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
