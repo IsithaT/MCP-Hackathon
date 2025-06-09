@@ -121,7 +121,7 @@ def validate_api_configuration(
     5. If sample_response looks valid: Use config_id in activate_monitoring() to activate monitoring
 
     ARGUMENTS:
-    - mcp_api_key: MCP API key serves as user identifier. Leave as empty string "" to use the environment variable MCP_API_KEY.
+    - mcp_api_key: MCP API key serves as user identifier.
     - name: User-friendly name for the monitoring task
     - description: Description of what is being monitored
     - method: HTTP method (GET, POST, PUT, DELETE)
@@ -183,7 +183,7 @@ def validate_api_configuration(
     try:
         # Validate input parameters
         if not mcp_api_key or not mcp_api_key.strip() or mcp_api_key == "":
-            mcp_api_key = os.environ["MCP_API_KEY"]
+            mcp_api_key = os.getenv("MCP_API_KEY", "")
             if not mcp_api_key or not mcp_api_key.strip():
                 return {
                     "success": False,
@@ -381,7 +381,7 @@ async def activate_monitoring(config_id, mcp_api_key):
 
     ARGUMENTS:
     - config_id: The ID from successful validate_api_configuration() execution (required)
-    - mcp_api_key: User's MCP API key for verification (must match validation step). Leave as empty string "" to use the environment variable MCP_API_KEY.
+    - mcp_api_key: User's MCP API key for verification (must match validation step).
 
     Input Examples:
 
@@ -435,7 +435,7 @@ async def activate_monitoring(config_id, mcp_api_key):
     # attempt to create the scheduler
     try:
         if not mcp_api_key or not mcp_api_key.strip() or mcp_api_key == "":
-            mcp_api_key = os.environ["MCP_API_KEY"]
+            mcp_api_key = os.getenv("MCP_API_KEY", "")
             if not mcp_api_key or not mcp_api_key.strip():
                 return {
                     "success": False,
@@ -688,7 +688,7 @@ def retrieve_monitored_data(config_id, mcp_api_key, mode="summary"):
 
     ARGUMENTS:
     - config_id: The ID of the API configuration to retrieve data for (required)
-    - mcp_api_key: User's MCP API key for verification (must match validation step). Leave as empty string "" to use the environment variable MCP_API_KEY.
+    - mcp_api_key: User's MCP API key for verification (must match validation step).
     - mode: Data return mode - "summary" (LLM-optimized), "details" (full responses, minimal metadata), "full" (everything)
 
     Input Examples:
@@ -770,7 +770,7 @@ def retrieve_monitored_data(config_id, mcp_api_key, mode="summary"):
     """
     try:
         if not mcp_api_key or not mcp_api_key.strip() or mcp_api_key == "":
-            mcp_api_key = os.environ["MCP_API_KEY"]
+            mcp_api_key = os.getenv("MCP_API_KEY", "")
             if not mcp_api_key or not mcp_api_key.strip():
                 return {
                     "success": False,
