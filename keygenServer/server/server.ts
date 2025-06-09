@@ -20,7 +20,7 @@ const allowedOrigins = [
 // Strict CORS configuration for protected routes
 const strictCorsOptions = {
     origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-        if (!origin || allowedOrigins.includes(origin)) {
+        if (origin && allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
             callback(new Error('Not allowed by CORS'));
