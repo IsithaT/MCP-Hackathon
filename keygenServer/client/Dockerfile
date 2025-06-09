@@ -1,4 +1,8 @@
+# We deployed to Vercel so this Dockerfile isn't actually being used
+
 # Build stage
+
+
 FROM node:20-alpine AS builder
 
 WORKDIR /app
