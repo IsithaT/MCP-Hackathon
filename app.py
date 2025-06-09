@@ -59,7 +59,7 @@ validation_tab = gr.Interface(
     flagging_options=["Invalid Request", "API Error", "Config Issue", "Other"],
     examples=[
         [
-            "1bba41230a7050381beaeb818b23721c2d97557b3c6fcfe369b07847e1b61eb8",
+            "test_mcp_key_123",
             "Wind-up Tonberry Price Monitor",
             "Monitor Wind-up Tonberry (ID: 6184) market prices on Aether-Siren server every hour for one week",
             "GET",
