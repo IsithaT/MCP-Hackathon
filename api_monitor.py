@@ -182,15 +182,15 @@ def validate_api_configuration(
     """
     try:
         # Validate input parameters
-        if not mcp_api_key or not mcp_api_key.strip() or mcp_api_key == "" :
+        if not mcp_api_key or not mcp_api_key.strip() or mcp_api_key == "":
             mcp_api_key = os.environ["MCP_API_KEY"]
             if not mcp_api_key or not mcp_api_key.strip():
                 return {
                     "success": False,
                     "message": "MCP API key is required",
                     "config_id": None,
-                }  
-            
+                }
+
         # Verify the MCP API key with the key generation server
         key_verification = verify_mcp_api_key(mcp_api_key)
         if not key_verification["success"]:
@@ -434,14 +434,14 @@ async def activate_monitoring(config_id, mcp_api_key):
 
     # attempt to create the scheduler
     try:
-        if not mcp_api_key or not mcp_api_key.strip() or mcp_api_key == "" :
+        if not mcp_api_key or not mcp_api_key.strip() or mcp_api_key == "":
             mcp_api_key = os.environ["MCP_API_KEY"]
             if not mcp_api_key or not mcp_api_key.strip():
                 return {
                     "success": False,
                     "message": "MCP API key is required",
                     "config_id": None,
-                }  
+                }
         # Verify the MCP API key with the key generation server first
         key_verification = verify_mcp_api_key(mcp_api_key)
         if not key_verification["success"]:
@@ -769,14 +769,14 @@ def retrieve_monitored_data(config_id, mcp_api_key, mode="summary"):
     ERROR HANDLING: If config_id not found or invalid, returns success=False with error message
     """
     try:
-        if not mcp_api_key or not mcp_api_key.strip() or mcp_api_key == "" :
+        if not mcp_api_key or not mcp_api_key.strip() or mcp_api_key == "":
             mcp_api_key = os.environ["MCP_API_KEY"]
             if not mcp_api_key or not mcp_api_key.strip():
                 return {
                     "success": False,
                     "message": "MCP API key is required",
                     "config_id": None,
-                }  
+                }
         # Verify the MCP API key with the key generation server first
         key_verification = verify_mcp_api_key(mcp_api_key)
         if not key_verification["success"]:
