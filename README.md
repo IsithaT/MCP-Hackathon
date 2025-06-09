@@ -4,7 +4,7 @@ short_description: Input any API configuration and monitor responses over time.
 sdk: gradio
 sdk_version: "5.33.0"
 emoji: 🪽
-colorFrom: orange
+colorFrom: red
 colorTo: yellow
 license: mit
 pinned: true
