@@ -1,7 +1,8 @@
 'use client';
-// import { auth, googleProvider } from '@/libs/firebase';
-// import { signInWithPopup } from 'firebase/auth';
-// import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
+
+// This is the login screen for the client website.
+
+
 import { useRouter } from 'next/navigation';
 import { useCallback } from 'react';
 
