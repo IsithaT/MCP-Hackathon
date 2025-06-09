@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import prisma from './prisma_client';
+import { prisma } from './prisma_client';
 import crypto from 'crypto';
 
 
