@@ -17,14 +17,14 @@ tags:
 
 ## Built By:
 
-Isitha Tennakoon - IsithaT 
-(Note, my commits on HF show up under both "IsithaT" and "Isitha Tennakoon")
+Isitha Tennakoon - IsithaT 🐦‍⬛ 
 
-Coleman Lai - Googolplexic
+Coleman Lai - Googolplexic 🦆
 
-William Chen - potatooine
+William Chen - potatooine 🦝 
 
-James Kim - JamesyKim
+James Kim - JamesyKim 🦭
+
 
 
 ## Link to demo video: (placeholder for video link)
