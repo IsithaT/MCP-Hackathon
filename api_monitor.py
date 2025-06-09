@@ -432,7 +432,6 @@ async def activate_monitoring(config_id, mcp_api_key):
     this
     """
 
-
     # Attempt to create the scheduler
     try:
         if not mcp_api_key or not mcp_api_key.strip() or mcp_api_key == "":
@@ -443,7 +442,7 @@ async def activate_monitoring(config_id, mcp_api_key):
                     "message": "MCP API key is required",
                     "config_id": None,
                 }
-            
+
         # Verify the MCP API key with the key generation server first
         key_verification = verify_mcp_api_key(mcp_api_key)
         if not key_verification["success"]:
@@ -474,7 +473,7 @@ async def activate_monitoring(config_id, mcp_api_key):
                 "message": "Invalid mcp_api_key. You are not authorized to activate this configuration.",
                 "config_id": config_id,
             }  
-        
+
         # Extract scheduling parameters
         name = config.get("name", "Unknown")
         schedule_interval_minutes = float(config.get("schedule_interval_minutes", 20))
@@ -492,7 +491,7 @@ async def activate_monitoring(config_id, mcp_api_key):
                 stop_at = datetime.fromisoformat(
                     str(stop_at)
                 )  
-                
+
         # Job function to make actual API calls
 
         def api_monitoring_job():
@@ -650,7 +649,7 @@ async def activate_monitoring(config_id, mcp_api_key):
                     print(
                         f"Failed to log error to database: {db_exc}"
                     )  
-                    
+
         # Setup AsyncIO scheduler
 
         scheduler = AsyncIOScheduler()
@@ -664,9 +663,9 @@ async def activate_monitoring(config_id, mcp_api_key):
             id=f"monitor_{config_id}",
         )
         scheduler.start()
-                        # Mark config as active (only once, on first run)
+        # Mark config as active (only once, on first run)
         if not config["is_active"]:
-            conn.execute(
+            cur.execute(
                 """
                 UPDATE api_configurations SET is_active = %s WHERE config_id = %s
                 """,
