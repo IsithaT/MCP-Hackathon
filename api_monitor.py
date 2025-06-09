@@ -664,6 +664,15 @@ async def activate_monitoring(config_id, mcp_api_key):
             id=f"monitor_{config_id}",
         )
         scheduler.start()
+                        # Mark config as active (only once, on first run)
+        if not config["is_active"]:
+            conn.execute(
+                """
+                UPDATE api_configurations SET is_active = %s WHERE config_id = %s
+                """,
+                (True, config_id),
+            )
+            print(f"Marked configuration {config_id} as active.")
         conn.close()
         return {
             "success": True,
