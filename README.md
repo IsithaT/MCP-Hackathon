@@ -17,9 +17,13 @@ tags:
 
 ## Built By:
 
-Isitha Tennakoon - IsithaT
+Isitha Tennakoon - IsithaT 
+(Note, my commits on HF show up under both "IsithaT" and "Isitha Tennakoon")
+
 Coleman Lai - Googolplexic
+
 William Chen - potatooine
+
 James Kim - JamesyKim
 
 
