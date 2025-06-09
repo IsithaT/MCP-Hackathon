@@ -113,6 +113,8 @@ def validate_api_configuration(
 
     CRITICAL: Be sure to always clearly inform the user of the config_id after a desired validation result.
 
+    CRITICAL: If you don't have an MCP API KEY given by the user, prompt them to get it here: https://mcp-hackathon.vercel.app/
+
     WORKFLOW:
     1. Call this function to validate API configuration
     2. If success=False: Fix parameters and retry this function
