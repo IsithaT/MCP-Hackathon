@@ -33,7 +33,7 @@ Hermes requires users to generate an MCP API key, which you can do right [here a
 2. **Activate Monitoring**: Use the `activate_monitoring` function with the `config_id` from the previous step to start monitoring the API. This will set up a background task that will periodically check the API and store the responses.
 3. **Retrieve Monitored Data**: Use the `retrieve_monitored_data` function with the `config_id` to retrieve the monitoring data. You can specify the mode of data retrieval (summary, details, or full) to get the desired level of information. This can be called anytime after monitoring is activated.
 
-### :warning: Important! :warning:
+### ⚠️ Important! ⚠️
 
 Call results and configurations will be deleted 14 days after the last call to the API. This is to ensure that the database does not get too large and to protect user privacy.
 
