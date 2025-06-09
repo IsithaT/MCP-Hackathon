@@ -15,6 +15,14 @@ tags:
 
 # Hermes - Automated Asynchronous REST API Monitoring
 
+## Built By
+
+Isitha Tennakoon - IsithaT
+Coleman Lai - Googolplexic
+William Chen - potatooine
+James Kim - JamesyKim
+
+
 ## Link to demo video: (placeholder for video link)
 
 ## MCP API Key Generation link: [Generate MCP API Key](https://mcp-hackathon.vercel.app/main)
