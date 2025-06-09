@@ -54,7 +54,7 @@ validation_tab = gr.Interface(
     ],
     outputs=gr.Textbox(label="Validation Result", lines=10),
     title="API Validation & Storage",
-    description="STEP 1: Validate and test your API configuration. This tool tests the API call and stores the configuration if successful. If validation fails, retry with corrected parameters. If validation succeeds, proceed directly to 'Activate Scheduler' tab with the returned Config ID. Required for LLM tools that need to monitor external APIs periodically. Max monitoring period is 1 week (168 hours). Supports decimal hours (e.g., 0.5 for 30 minutes). If you don't have an MCP API key, get it here: https://mcp-hackathon.vercel.app/",
+    description="STEP 1: Validate and test your API configuration. This tool tests the API call and stores the configuration if successful. If validation fails, retry with corrected parameters. If validation succeeds, proceed directly to 'Activate Scheduler' tab with the returned Config ID. Required for LLM tools that need to monitor external APIs periodically. Max monitoring period is 1 week (168 hours). Supports decimal hours (e.g., 0.5 for 30 minutes). If you don't have an MCP API key, get it here: https://mcp-hackathon.vercel.app/. To read more: go here https://huggingface.co/spaces/Agents-MCP-Hackathon/hermes/blob/main/README.md",
     flagging_mode="manual",
     flagging_options=["Invalid Request", "API Error", "Config Issue", "Other"],
     examples=[
