@@ -55,7 +55,7 @@ def verify_mcp_api_key(api_key):
     """
     try:
         # Get the key server URL from environment or use default
-        key_server_url = os.getenv("KEY_SERVER_URL", "http://localhost:3001")
+        key_server_url = os.getenv("KEY_SERVER_URL")
 
         response = requests.post(
             f"{key_server_url}/api/verifyKey",
@@ -183,11 +183,13 @@ def validate_api_configuration(
     try:
         # Validate input parameters
         if not mcp_api_key or not mcp_api_key.strip():
-            return {
-                "success": False,
-                "message": "MCP API key is required",
-                "config_id": None,
-            }  # Verify the MCP API key with the key generation server
+            mcp_api_key = os.environ["MCP_API_KEY"]
+            if not mcp_api_key or not mcp_api_key.strip():
+                return {
+                    "success": False,
+                    "message": "MCP API key is required",
+                    "config_id": None,
+                }  # Verify the MCP API key with the key generation server
         key_verification = verify_mcp_api_key(mcp_api_key)
         if not key_verification["success"]:
             return {
