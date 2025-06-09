@@ -33,7 +33,7 @@ const strictCorsOptions = {
 // Open CORS configuration for public routes
 const openCorsOptions = {
     origin: '*',
-    methods: ['GET', 'POST'],
+    methods: ['GET', 'POST', 'OPTIONS'],
     credentials: true
 };
 
@@ -84,6 +84,8 @@ app.post('/api/verifyKey',
     }
 );
 
+app.options('/api/addKey', cors(strictCorsOptions));
+app.options('/api/addKey/', cors(strictCorsOptions));
 // Protected route with strict CORS and authentication
 app.post('/api/addKey', 
     cors(strictCorsOptions),
