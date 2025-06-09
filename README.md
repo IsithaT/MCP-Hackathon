@@ -15,7 +15,7 @@ tags:
 
 # Hermes - Automated Asynchronous REST API Monitoring
 
-## Built By
+## Built By:
 
 Isitha Tennakoon - IsithaT
 Coleman Lai - Googolplexic
