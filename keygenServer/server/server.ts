@@ -12,14 +12,16 @@ const port = process.env.PORT || 3001;
 
 // Whitelist of allowed client origins
 const allowedOrigins = [
+    // for testing
     'http://localhost:3000',
-    'https://mcp-hackathon.vercel.app',
-    'http://your-production-domain.com'
+    // deployed frontend
+    'https://mcp-hackathon.vercel.app'
 ];
 
 // Strict CORS configuration for protected routes
 const strictCorsOptions = {
     origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+        // disallows CURL, Postman, etc.
         if (origin && allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
@@ -37,21 +39,18 @@ const openCorsOptions = {
     credentials: true
 };
 
-// app.use(cors({
-//     origin: allowedOrigins,
-//     credentials: true,
-//     methods: ['GET', 'POST', 'OPTIONS']
-// }));
 
 // Middleware
 app.use(express.json());
 
-
+// Generates Key
+// TODO: add verification that key doesn't exist and add key if needed.
+//          currently relying on sheer probablistic chance :P
 function generateApiKey(): string {
     return crypto.randomBytes(32).toString('hex');
 }
 
-// Public route example (no CORS restrictions)
+// Public route (no CORS restrictions)
 app.post('/api/verifyKey',
     cors(openCorsOptions),
     async (req: Request, res: Response) => {
@@ -63,6 +62,7 @@ app.post('/api/verifyKey',
                 return;
             }
 
+            // See if key is in database
             const key = await prisma.key.findFirst({
                 where: {
                     apiKey
@@ -84,9 +84,9 @@ app.post('/api/verifyKey',
     }
 );
 
+// Protected route with strict CORS and authentication
 app.options('/api/addKey', cors(strictCorsOptions));
 app.options('/api/addKey/', cors(strictCorsOptions));
-// Protected route with strict CORS and authentication
 app.post('/api/addKey', 
     cors(strictCorsOptions),
     async (req: Request, res: Response): Promise<void> => {
@@ -100,6 +100,7 @@ app.post('/api/addKey',
 
             const apiKey = generateApiKey();
             
+            // Add key to database
             const newKey = await prisma.key.create({
                 data: {
                     email,

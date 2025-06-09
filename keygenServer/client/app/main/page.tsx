@@ -1,4 +1,7 @@
 'use client';
+
+// This is the homepage of the app. Where you request a new key. 
+
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -36,6 +39,7 @@ export default function MainPage() {
     router.push('/');
   };
 
+  // Call the server to obtain a key
   const generateApiKey = async () => {
     try {
       const response = await fetch('https://mcp-hackathon-tu1u.onrender.com/api/addKey', {
