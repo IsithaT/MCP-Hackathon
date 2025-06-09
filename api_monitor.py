@@ -574,6 +574,7 @@ async def activate_monitoring(config_id, mcp_api_key):
                         """,
                         (True, config_id),
                     )
+                    job_conn.commit()
                     print(f"Marked configuration {config_id} as active.")
 
                 # Check if this is the last call by comparing current time to stop_at
@@ -590,6 +591,7 @@ async def activate_monitoring(config_id, mcp_api_key):
                         """,
                         (False, config_id),
                     )
+                    job_conn.commit()
                     print(
                         f"Last call for configuration {config_id}. Marked as inactive."
                     )
@@ -671,6 +673,7 @@ async def activate_monitoring(config_id, mcp_api_key):
                 """,
                 (True, config_id),
             )
+            conn.commit()
             print(f"Marked configuration {config_id} as active.")
         conn.close()
         return {
