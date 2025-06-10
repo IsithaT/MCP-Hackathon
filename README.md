@@ -49,11 +49,8 @@ Hermes requires users to generate an MCP API key, which you can do right [here a
 
 ### ⚠️ Important! ⚠️
 
-Our Key Generation and Key Validation server is Deployed on Render and spins down if unused for extended periods of time.
-It may take up to 60 seconds for requests to go through if you are the first person on the site in a while. If requests or the website time 
-out while loading, please try again after a minute or two. We plan on moving off of Render soon! 
-
-Call results and configurations will be deleted 14 days after the last call to the API. This is to ensure that the database does not get too large and to protect user privacy.
+- Call results and configurations will be deleted 14 days after the last call to the API. This is to ensure that the database does not get too large and to protect user privacy.
+- Render is used to host the backend, which means that the server will go to sleep after a period of inactivity. This may cause a delay in the first request after a period of inactivity, but subsequent requests should be faster. If it does not work, try refreshing the page/the agent.
 
 ## Complete Workflow Process
 

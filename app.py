@@ -1,9 +1,31 @@
 import gradio as gr
+import os
 from api_monitor import (
     validate_api_configuration,
     activate_monitoring,
     retrieve_monitored_data,
 )
+
+
+def load_readme():
+    """Load and return the README content."""
+    try:
+        readme_path = os.path.join(os.path.dirname(__file__), "README.md")
+        with open(readme_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        # Remove the YAML front matter for cleaner display
+        if content.startswith("---"):
+            lines = content.split("\n")
+            yaml_end = -1
+            for i, line in enumerate(lines[1:], 1):
+                if line.strip() == "---":
+                    yaml_end = i
+                    break
+            if yaml_end > 0:
+                content = "\n".join(lines[yaml_end + 1 :])
+        return content
+    except Exception as e:
+        return f"Error loading README: {str(e)}"
 
 
 # API Validation Tab
@@ -161,10 +183,20 @@ retrieve_tab = gr.Interface(
     ],
 )
 
+# README Tab
+readme_tab = gr.Interface(
+    fn=load_readme,
+    inputs=[],
+    outputs=gr.Markdown(label="Documentation/Readme", value=load_readme()),
+    title="Documentation & Guide",
+    description="Complete documentation and usage guide for Hermes API Monitoring tool. This includes setup instructions, workflow examples, and troubleshooting information.",
+    flagging_mode="auto",
+)
+
 # Create tabbed interface
 demo = gr.TabbedInterface(
-    [validation_tab, scheduler_tab, retrieve_tab],
-    ["Validate & Store", "Activate Scheduler", "Retrieve Data"],
+    [validation_tab, scheduler_tab, retrieve_tab, readme_tab],
+    ["Validate & Store", "Activate Scheduler", "Retrieve Data", "Documentation"],
     title="Hermes - Automated Asynchronous REST API Monitoring",
 )
 
