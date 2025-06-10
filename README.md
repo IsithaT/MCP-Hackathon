@@ -25,7 +25,7 @@ William Chen - potatooine 🦝
 
 James Kim - JamesyKim 🦭
 
-## Link to demo video: (placeholder for video link)
+## Link to demo video: [(Demo Video)](https://youtu.be/NldpnfHg6eg)
 
 ## MCP API Key Generation link: [Generate MCP API Key](https://mcp-hackathon.vercel.app/main)
 
