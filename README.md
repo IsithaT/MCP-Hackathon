@@ -15,17 +15,15 @@ tags:
 
 # Hermes - Automated Asynchronous REST API Monitoring
 
-## Built By:
+## Built By
 
-Isitha Tennakoon - IsithaT 🐦‍⬛ 
+Isitha Tennakoon - IsithaT 🐦‍⬛
 
 Coleman Lai - Googolplexic 🦆
 
-William Chen - potatooine 🦝 
+William Chen - potatooine 🦝
 
 James Kim - JamesyKim 🦭
-
-
 
 ## Link to demo video: (placeholder for video link)
 
@@ -53,7 +51,7 @@ Hermes requires users to generate an MCP API key, which you can do right [here a
 
 Call results and configurations will be deleted 14 days after the last call to the API. This is to ensure that the database does not get too large and to protect user privacy.
 
-## 📋 Complete Workflow Process
+## Complete Workflow Process
 
 ### Prerequisites
 
@@ -118,7 +116,7 @@ Use the `retrieve_monitored_data` function to:
 
 ### Example Workflow
 
-```md
+```txt
 1. You want to monitor a weather API every 30 minutes for 2 hours
    ↓
 2. Call validate_api_configuration() with your weather API details
