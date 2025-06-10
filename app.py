@@ -183,20 +183,16 @@ retrieve_tab = gr.Interface(
     ],
 )
 
-# README Tab
-readme_tab = gr.Interface(
-    fn=load_readme,
-    inputs=[],
-    outputs=gr.Markdown(label="Documentation/Readme", value=load_readme()),
-    title="Documentation & Guide",
-    description="Complete documentation and usage guide for Hermes API Monitoring tool. This includes setup instructions, workflow examples, and troubleshooting information.",
-    flagging_mode="auto",
-)
+# README Tab - Static display only
+with gr.Blocks() as readme_tab:
+    gr.Markdown("# Documentation/Readme")
+
+    gr.Markdown(load_readme())
 
 # Create tabbed interface
 demo = gr.TabbedInterface(
     [validation_tab, scheduler_tab, retrieve_tab, readme_tab],
-    ["Validate & Store", "Activate Scheduler", "Retrieve Data", "Documentation"],
+    ["Validate & Store", "Activate Scheduler", "Retrieve Data", "Documentation/Readme"],
     title="Hermes - Automated Asynchronous REST API Monitoring",
 )
 
